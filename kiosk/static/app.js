@@ -217,6 +217,7 @@
 
   function renderTabs() {
     clear(dom.tabs);
+    dom.tabs.className = 'tabs tabs--' + Math.min(4, Math.max(1, state.tabs.length));
     state.tabs.forEach(function (tab, index) {
       var node = button('tab', tab.title, function () { selectTab(index); });
       node.setAttribute('role', 'tab');
@@ -337,6 +338,14 @@
     if (why) { why.textContent = reason; why.hidden = !reason; }
   }
 
+  /* "쉬움 4x4", "한글 (자음·모음)" 같은 표시는 이름과 덧붙임을 두 줄로 나눠, 한 줄에 놓인 버튼들의 모양을 맞춘다. */
+  function fillChoice(node, label) {
+    var parts = /^(.+?)\s+(\(.+\)|\d+\s*x\s*\d+)$/.exec(label);
+    if (!parts) { node.textContent = label; return; }
+    node.appendChild(el('span', 'choice__main', parts[1]));
+    node.appendChild(el('span', 'choice__sub', parts[2].replace(/^\(|\)$/g, '')));
+  }
+
   function renderField(field) {
     var box = el('div', 'field');
     var wrong = state.notice && state.noticeField === field.id;
@@ -345,10 +354,11 @@
       var count = field.choices.length;
       var row = el('div', 'choices' + (count === 2 || count === 4 ? ' choices--' + count : count === 5 ? ' choices--5' : ''));
       field.choices.forEach(function (choice) {
-        var node = button('choice' + (count > 4 ? ' choice--small' : ''), choice[0], function () {
+        var node = button('choice' + (count > 4 ? ' choice--small' : ''), null, function () {
           state.values[field.id] = choice[1];
           renderPanel();
         });
+        fillChoice(node, choice[0]);
         node.setAttribute('aria-pressed', state.values[field.id] === choice[1] ? 'true' : 'false');
         row.appendChild(node);
       });
