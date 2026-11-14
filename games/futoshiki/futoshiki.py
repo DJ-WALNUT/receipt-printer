@@ -6,10 +6,10 @@
     python games/futoshiki/futoshiki.py                    # 보통 난이도(5x5) 한 판 인쇄
     python games/futoshiki/futoshiki.py --level hard       # easy(4x4) | medium(5x5) | hard(6x6)
     python games/futoshiki/futoshiki.py --preview          # 인쇄 없이 이미지만 저장
-    python games/futoshiki/futoshiki.py --answer M482913   # 그 판의 정답 인쇄
+    python games/futoshiki/futoshiki.py --answer FM482913   # 그 판의 정답 인쇄
 
 이미지는 games/futoshiki/output/ 에 저장된다.
-모든 판은 정답이 하나뿐이다. 판 번호(난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
+모든 판은 정답이 하나뿐이다. 시드번호(F + 난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
 """
 import argparse
 import datetime
@@ -20,8 +20,9 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
-from receipt import PAPER_W, add_output_args, draw_run, output, render, size_style, stack
+from receipt import PAPER_W, add_output_args, strip_seed, draw_run, output, render, size_style, stack
 
+SEED_PREFIX = "F"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 LEVELS = {  # 글자: (이름, 표시, 한 변 칸 수, 남길 부등호 수, 칸 크기, 칸 사이 간격)
     "E": ("easy", "쉬움", 4, 12, 84, 44),
     "M": ("medium", "보통", 5, 16, 70, 34),
@@ -143,39 +144,42 @@ def draw_grid(level, given, less, solution=None, shrink=1.0):
 def main():
     ap = argparse.ArgumentParser(description="부등호 스도쿠를 영수증 프린터로 인쇄")
     ap.add_argument("--level", choices=[v[0] for v in LEVELS.values()], default="medium")
-    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: M482913)")
+    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: FM482913)")
     add_output_args(ap)
     args = ap.parse_args()
+    if args.answer:
+        args.answer = strip_seed(args.answer, SEED_PREFIX, ap, "FM482913")
 
     if args.answer:
         level, seed = args.answer[:1].upper(), args.answer[1:]
         if level not in LEVELS or not seed.isdigit():
-            ap.error("번호는 E/M/H 글자 뒤에 숫자가 오는 형식입니다 (예: M482913)")
+            ap.error("시드번호는 F + 난이도(E/M/H) + 숫자 형식입니다 (예: FM482913)")
     else:
         level = next(k for k, v in LEVELS.items() if v[0] == args.level)
         seed = str(random.randrange(100000, 1000000))
     number = f"{level}{seed}"
+    seed_no = SEED_PREFIX + number
     label, n = LEVELS[level][1], LEVELS[level][2]
     given, less, solution = generate(level, seed)
 
     if args.answer:
         sheet = stack(
-            render(["^ ## 부등호 스도쿠 정답", f"^ > No. {number}"]),
+            render(["^ ## 부등호 스도쿠 정답", f"^ > No. {seed_no}"]),
             draw_grid(level, given, less, solution, shrink=0.7),
         )
     else:
         today = datetime.date.today().isoformat()
         sheet = stack(
-            render(["^ # 부등호 스도쿠", f"^ {today} · {label} · Seed No. {number}"]),
+            render(["^ # 부등호 스도쿠", f"^ {today} · {label} · Seed No. {seed_no}"]),
             draw_grid(level, given, less),
             render([
                 f"@20 가로줄과 세로줄마다 1~{n}을 한 번씩 채우세요.",
                 "@20 칸 사이의 부등호는 뾰족한 쪽 칸이 더 작다는 뜻입니다.",
-                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {number}",
+                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {seed_no}",
             ]),
         )
-    tag = f"{number}_answer" if args.answer else number
-    print(f"No. {number} ({n}x{n}, 부등호 {len(less)}개, 주어진 숫자 {len(given)}개) "
+    tag = f"{seed_no}_answer" if args.answer else seed_no
+    print(f"No. {seed_no} ({n}x{n}, 부등호 {len(less)}개, 주어진 숫자 {len(given)}개) "
           + output(sheet, "games/futoshiki", args, tag))
 
 

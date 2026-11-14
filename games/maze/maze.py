@@ -4,10 +4,10 @@
     python games/maze/maze.py                    # 보통 난이도 한 판 인쇄
     python games/maze/maze.py --level hard       # easy | medium | hard
     python games/maze/maze.py --preview          # 인쇄 없이 이미지만 저장
-    python games/maze/maze.py --answer M482913   # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
+    python games/maze/maze.py --answer ZM482913   # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
 
 이미지는 games/maze/output/ 에 저장된다.
-모든 미로는 길이 하나뿐이다. 판 번호(난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
+모든 미로는 길이 하나뿐이다. 시드번호(Z + 난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
 """
 import argparse
 import datetime
@@ -18,8 +18,9 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
-from receipt import PAPER_W, add_output_args, draw_run, output, render, stack
+from receipt import PAPER_W, add_output_args, strip_seed, draw_run, output, render, stack
 
+SEED_PREFIX = "Z"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 LEVELS = {  # 글자: (이름, 표시, 가로 칸, 세로 칸, 칸 크기(도트), 정답지 칸 크기)
     "E": ("easy", "쉬움", 12, 12, 44, 32),
     "M": ("medium", "보통", 16, 22, 34, 24),
@@ -124,40 +125,43 @@ def draw_maze(level, opened, path=None, answer=False):
 def main():
     ap = argparse.ArgumentParser(description="미로찾기를 영수증 프린터로 인쇄")
     ap.add_argument("--level", choices=[v[0] for v in LEVELS.values()], default="medium")
-    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: M482913)")
+    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: ZM482913)")
     add_output_args(ap)
     args = ap.parse_args()
+    if args.answer:
+        args.answer = strip_seed(args.answer, SEED_PREFIX, ap, "ZM482913")
 
     if args.answer:
         level, seed = args.answer[0].upper(), args.answer[1:]
         if level not in LEVELS or not seed.isdigit():
-            ap.error("번호는 E/M/H 글자 뒤에 숫자가 오는 형식입니다 (예: M482913)")
+            ap.error("시드번호는 Z + 난이도(E/M/H) + 숫자 형식입니다 (예: ZM482913)")
     else:
         level = next(k for k, v in LEVELS.items() if v[0] == args.level)
         seed = str(random.randrange(100000, 1000000))
     number = f"{level}{seed}"
+    seed_no = SEED_PREFIX + number
     opened, path = generate(level, seed)
     cols, rows = LEVELS[level][2:4]
 
     if args.answer:
         sheet = stack(
-            render(["^ ## 미로찾기 정답", f"^ > No. {number}"]),
+            render(["^ ## 미로찾기 정답", f"^ > No. {seed_no}"]),
             draw_maze(level, opened, path, answer=True),
             render(["> 굵은 선이 정답 길입니다."]),
         )
     else:
         today = datetime.date.today().isoformat()
         sheet = stack(
-            render(["^ # 미로찾기", f"^ {today} · {LEVELS[level][1]} · Seed No. {number}"]),
+            render(["^ # 미로찾기", f"^ {today} · {LEVELS[level][1]} · Seed No. {seed_no}"]),
             draw_maze(level, opened),
             render([
                 "@20 출발에서 도착까지 가는 길을 찾으세요. 길은 하나뿐입니다.",
-                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {number}",
+                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {seed_no}",
             ]),
         )
 
-    tag = f"{number}_answer" if args.answer else number
-    print(f"No. {number} ({cols}x{rows}칸, 정답 길이 {len(path)}칸) " + output(sheet, "games/maze", args, tag))
+    tag = f"{seed_no}_answer" if args.answer else seed_no
+    print(f"No. {seed_no} ({cols}x{rows}칸, 정답 길이 {len(path)}칸) " + output(sheet, "games/maze", args, tag))
 
 
 if __name__ == "__main__":

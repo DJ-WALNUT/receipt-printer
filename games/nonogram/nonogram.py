@@ -4,8 +4,8 @@
     python games/nonogram/nonogram.py                  # 쉬움(10x10) 한 판, 그림 무작위
     python games/nonogram/nonogram.py --level hard     # easy(10x10) | hard(16x16)
     python games/nonogram/nonogram.py --preview        # 인쇄 없이 이미지만 저장
-    python games/nonogram/nonogram.py --answer E03     # 그 판의 정답 그림 인쇄 (번호는 영수증 아래에 찍힘)
-    python games/nonogram/nonogram.py --list           # 쓸 수 있는 판 번호 보기
+    python games/nonogram/nonogram.py --answer NE03     # 그 판의 정답 그림 인쇄 (번호는 영수증 아래에 찍힘)
+    python games/nonogram/nonogram.py --list           # 쓸 수 있는 시드번호 보기
 
 이미지는 games/nonogram/output/ 에 저장된다.
 쉬움 그림은 이 파일의 PICTURES, 어려움 그림은 전리품 뽑기(fortune/loot/loot.py)의 16x16 아이콘이다.
@@ -19,13 +19,14 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+SEED_PREFIX = "N"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))            # 공용 모듈 receipt.py
 sys.path.insert(0, str(ROOT / "fortune" / "loot"))   # 16x16 아이콘
-from receipt import PAPER_W, add_output_args, draw_run, output, render, stack
+from receipt import PAPER_W, add_output_args, strip_seed, draw_run, output, render, stack
 from loot import ICONS
 
-# 10x10 그림. '#' = 칠하는 칸. 새 그림은 맨 뒤에 추가한다 (순서를 바꾸면 판 번호가 달라진다).
+# 10x10 그림. '#' = 칠하는 칸. 새 그림은 맨 뒤에 추가한다 (순서를 바꾸면 시드번호가 달라진다).
 PICTURES = [
     ("하트", """
 .##....##.
@@ -223,7 +224,7 @@ def solvable(grid):
 
 
 def catalog():
-    """{판 번호: (이름, 그림)}. 논리로 풀리는 그림만 담는다."""
+    """{시드번호에서 N을 뗀 번호: (이름, 그림)}. 논리로 풀리는 그림만 담는다."""
     found = {}
     for i, (name, text) in enumerate(PICTURES, 1):
         found[f"E{i:02d}"] = (name, to_grid(text))
@@ -281,44 +282,47 @@ def draw_answer(grid, cell=20):
 def main():
     ap = argparse.ArgumentParser(description="노노그램을 영수증 프린터로 인쇄")
     ap.add_argument("--level", choices=["easy", "hard"], default="easy")
-    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답 그림을 인쇄 (예: E03)")
-    ap.add_argument("--list", action="store_true", help="쓸 수 있는 판 번호를 보여 주고 끝낸다")
+    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답 그림을 인쇄 (예: NE03)")
+    ap.add_argument("--list", action="store_true", help="쓸 수 있는 시드번호를 보여 주고 끝낸다")
     add_output_args(ap)
     args = ap.parse_args()
+    if args.answer:
+        args.answer = strip_seed(args.answer, SEED_PREFIX, ap, "NE03")
     boards = catalog()
     if args.list:
         for number, (name, grid) in boards.items():
-            print(f"  {number}  {len(grid[0])}x{len(grid)}  {name}")
+            print(f"  {SEED_PREFIX}{number}  {len(grid[0])}x{len(grid)}  {name}")
         return
 
     if args.answer:
         number = args.answer.upper()
         if number not in boards:
-            ap.error(f"없는 판 번호입니다. 가능한 번호: {', '.join(boards)}")
+            ap.error(f"없는 시드번호입니다. 가능한 번호: {', '.join(SEED_PREFIX + k for k in boards)}")
     else:
         number = random.choice([k for k in boards if k[0] == args.level[0].upper()])
+    seed_no = SEED_PREFIX + number
     name, grid = boards[number]
     size = f"{len(grid[0])}x{len(grid)}"
 
     if args.answer:
         sheet = stack(
-            render(["^ ## 노노그램 정답", f"^ > No. {number} · {name}"]),
+            render(["^ ## 노노그램 정답", f"^ > No. {seed_no} · {name}"]),
             draw_answer(grid),
         )
     else:
         today = datetime.date.today().isoformat()
         sheet = stack(
-            render(["^ # 노노그램", f"^ {today} · {size} · No. {number}"]),
+            render(["^ # 노노그램", f"^ {today} · {size} · Seed No. {seed_no}"]),
             draw_puzzle(grid),
             render([
                 "@20 숫자는 그 줄에서 연달아 칠하는 칸 수입니다. 숫자가 여럿이면 그 사이를 한 칸 이상 띄웁니다.",
                 "@20 다 칠하면 그림이 나옵니다!",
-                f"@20 정답: 판 번호 지참해서 사무실에 문의하세요 - {number}",
+                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {seed_no}",
             ]),
         )
-    tag = f"{number}_answer" if args.answer else number
+    tag = f"{seed_no}_answer" if args.answer else seed_no
     shown = name if args.answer else "그림은 비밀"
-    print(f"No. {number} ({size}, {shown}) " + output(sheet, "games/nonogram", args, tag))
+    print(f"No. {seed_no} ({size}, {shown}) " + output(sheet, "games/nonogram", args, tag))
 
 
 if __name__ == "__main__":

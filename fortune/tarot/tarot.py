@@ -3,7 +3,7 @@
 사용법 (프로젝트 폴더에서):
     python fortune/tarot/tarot.py                 # 한 장 뽑기
     python fortune/tarot/tarot.py --loop          # Enter를 누를 때마다 한 장
-    python fortune/tarot/tarot.py --seed 482913   # 같은 번호의 결과 다시 뽑기
+    python fortune/tarot/tarot.py --seed T482913   # 같은 시드번호의 결과 다시 뽑기
     python fortune/tarot/tarot.py --card 16       # 카드 지정 (0~21), --reversed 로 역방향
     python fortune/tarot/tarot.py --preview       # 인쇄 없이 이미지만 저장
 
@@ -20,8 +20,9 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
-from receipt import FONT_DIR, PAPER_W, add_output_args, output, raw, render, stack
+from receipt import FONT_DIR, PAPER_W, add_output_args, strip_seed, output, raw, render, stack
 
+SEED_PREFIX = "T"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 CARD_W, CARD_H, CARD_SCALE = 71, 95, 4     # 카드 원본 크기(도트)와 인쇄 배율
 REVERSED_CHANCE = 0.3
 K, D, G, L, W = 0, 64, 128, 192, 255       # 검정, 진한 망점, 중간 망점, 옅은 망점, 흰색
@@ -602,7 +603,7 @@ def build_sheet(result, seed):
     name, chips, mult, _ = result["hand"]
     top = render([
         "^ @36b 오늘의 타로",
-        f"^ > No. {seed} · {datetime.date.today().isoformat()}",
+        f"^ > Seed No. {seed} · {datetime.date.today().isoformat()}",
         "---",
     ])
     lines = [
@@ -634,13 +635,14 @@ def draw_one(args, seed):
     result = draw_card(seed, args.card, True if args.reversed else None)
     ko = CARDS[result["index"]][1]
     way = "역방향" if result["reversed"] else "정방향"
-    print(f"No. {seed}: {ROMAN[result['index']]} {ko} ({way}) -> "
-          + output(build_sheet(result, seed), "fortune/tarot", args, f"{seed}_{CARDS[result['index']][0].replace(' ', '')}"))
+    seed_no = SEED_PREFIX + seed
+    print(f"No. {seed_no}: {ROMAN[result['index']]} {ko} ({way}) -> "
+          + output(build_sheet(result, seed_no), "fortune/tarot", args, f"{seed_no}_{CARDS[result['index']][0].replace(' ', '')}"))
 
 
 def main():
     ap = argparse.ArgumentParser(description="오늘의 타로를 영수증 프린터로 인쇄")
-    ap.add_argument("--seed", help="다시 뽑을 번호")
+    ap.add_argument("--seed", help="다시 뽑을 시드번호 (예: T482913)")
     ap.add_argument("--card", type=int, help="카드 지정 (0~21)")
     ap.add_argument("--reversed", action="store_true", help="역방향으로 고정")
     ap.add_argument("--loop", action="store_true", help="Enter를 누를 때마다 한 장씩 뽑기")
@@ -648,7 +650,12 @@ def main():
     args = ap.parse_args()
 
     new_seed = lambda: str(random.randrange(100000, 1000000))
-    draw_one(args, args.seed or new_seed())
+    seed = None
+    if args.seed:
+        seed = strip_seed(args.seed, SEED_PREFIX, ap, "T482913")
+        if not (seed.isdigit() and len(seed) == 6):
+            ap.error("시드번호는 T 뒤에 숫자 여섯 자리입니다 (예: T482913)")
+    draw_one(args, seed or new_seed())
     while args.loop:
         try:
             if input("Enter = 한 장 더, q = 종료 > ").strip().lower() == "q":

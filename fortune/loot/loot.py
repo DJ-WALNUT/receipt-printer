@@ -4,7 +4,7 @@
     python fortune/loot/loot.py                 # 한 장 뽑기
     python fortune/loot/loot.py --loop          # Enter를 누를 때마다 한 장 (버튼 자판기 모드)
     python fortune/loot/loot.py --level 20      # 아이템 레벨 지정 (기본: 1~30 무작위)
-    python fortune/loot/loot.py --seed 482913   # 같은 번호의 아이템 다시 뽑기
+    python fortune/loot/loot.py --seed L482913   # 같은 시드번호의 아이템 다시 뽑기
     python fortune/loot/loot.py --preview       # 인쇄 없이 이미지만 저장
 
 이미지는 fortune/loot/output/ 에 저장된다.
@@ -17,7 +17,9 @@ from pathlib import Path
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
-from receipt import PAPER_W, add_output_args, output, render, stack
+from receipt import PAPER_W, add_output_args, strip_seed, output, render, stack
+
+SEED_PREFIX = "L"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 
 # (이름, 확률 가중치, 능력치 배율, 추가 옵션 수, 별)
 RARITIES = [
@@ -279,7 +281,7 @@ def roll(seed, level=None):
 def build_sheet(item, number):
     top = render([
         "^ @36b 전리품 감정서",
-        f"^ > 모험가 길드 감정소 · No. {number}",
+        f"^ > 모험가 길드 감정소 · Seed No. {number}",
         "---",
     ])
     body = [
@@ -305,20 +307,26 @@ def build_sheet(item, number):
 
 def draw_one(args, seed):
     item = roll(seed, args.level)
-    sheet = build_sheet(item, seed)
-    print(f"No. {seed}: [{item['rarity']}] {item['name']} -> " + output(sheet, "fortune/loot", args, seed))
+    seed_no = SEED_PREFIX + seed
+    sheet = build_sheet(item, seed_no)
+    print(f"No. {seed_no}: [{item['rarity']}] {item['name']} -> " + output(sheet, "fortune/loot", args, seed_no))
 
 
 def main():
     ap = argparse.ArgumentParser(description="TRPG 전리품 감정서를 영수증 프린터로 인쇄")
     ap.add_argument("--level", type=int, help="아이템 레벨 (기본: 1~30 무작위)")
-    ap.add_argument("--seed", help="다시 뽑을 아이템 번호")
+    ap.add_argument("--seed", help="다시 뽑을 아이템의 시드번호 (예: L482913)")
     ap.add_argument("--loop", action="store_true", help="Enter를 누를 때마다 한 장씩 뽑기")
     add_output_args(ap)
     args = ap.parse_args()
 
     new_seed = lambda: str(random.randrange(100000, 1000000))
-    draw_one(args, args.seed or new_seed())
+    seed = None
+    if args.seed:
+        seed = strip_seed(args.seed, SEED_PREFIX, ap, "L482913")
+        if not (seed.isdigit() and len(seed) == 6):
+            ap.error("시드번호는 L 뒤에 숫자 여섯 자리입니다 (예: L482913)")
+    draw_one(args, seed or new_seed())
     while args.loop:
         try:
             if input("Enter = 한 장 더, q = 종료 > ").strip().lower() == "q":

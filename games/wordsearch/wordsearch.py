@@ -6,10 +6,10 @@
     python games/wordsearch/wordsearch.py --theme animal         # animal | food | fruit | school | space
     python games/wordsearch/wordsearch.py --words "나름,청소년,광명,동아리"   # 낱말을 직접 지정
     python games/wordsearch/wordsearch.py --preview              # 인쇄 없이 이미지만 저장
-    python games/wordsearch/wordsearch.py --answer M3482913      # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
+    python games/wordsearch/wordsearch.py --answer WM3482913      # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
 
 이미지는 games/wordsearch/output/ 에 저장된다.
-판 번호는 난이도 글자 + 주제 숫자 + 여섯 자리 숫자다. 번호만 있으면 같은 판과 정답을 다시 만들 수 있다.
+시드번호는 W + 난이도 글자 + 주제 숫자 + 여섯 자리 숫자다. 번호만 있으면 같은 판과 정답을 다시 만들 수 있다.
 낱말을 직접 지정한 판(주제 숫자 0)의 정답은 --answer 와 함께 같은 --words 를 다시 줘야 한다.
 """
 import argparse
@@ -21,8 +21,9 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
-from receipt import CONTENT_W, MARGIN, PAPER_W, add_output_args, draw_run, output, render, size_style, stack
+from receipt import CONTENT_W, MARGIN, PAPER_W, add_output_args, strip_seed, draw_run, output, render, size_style, stack
 
+SEED_PREFIX = "W"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 ACROSS, DOWN = (0, 1), (1, 0)
 DIAGONAL = [(1, 1), (-1, 1)]
 BACKWARD = [(0, -1), (-1, 0), (-1, -1), (1, -1)]
@@ -37,7 +38,7 @@ LEVELS = {  # 글자: (이름, 표시, 가로 칸, 세로 칸, 낱말 수, 칸 �
           "가로, 세로, 대각선에 거꾸로 적힌 낱말도 있습니다."),
 }
 
-THEMES = [  # 번호 1부터. (이름, 표시, 낱말들) - 순서를 바꾸면 예전 판 번호가 다른 판이 된다.
+THEMES = [  # 번호 1부터. (이름, 표시, 낱말들) - 순서를 바꾸면 예전 시드번호가 다른 판이 된다.
     ("animal", "동물", "호랑이 코끼리 기린 토끼 고양이 강아지 다람쥐 펭귄 돌고래 거북이 사자 여우 늑대 판다 하마 악어 "
                        "캥거루 고슴도치 너구리 부엉이"),
     ("food", "음식", "떡볶이 김밥 라면 비빔밥 불고기 만두 치킨 피자 햄버거 짜장면 김치찌개 돈가스 냉면 순대 튀김 "
@@ -163,14 +164,16 @@ def main():
     ap.add_argument("--level", choices=[v[0] for v in LEVELS.values()], default="medium")
     ap.add_argument("--theme", choices=names, help="주제 (기본: 무작위)")
     ap.add_argument("--words", metavar="낱말,낱말", help="주제 대신 직접 넣을 낱말 (쉼표로 구분)")
-    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: M3482913)")
+    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: WM3482913)")
     add_output_args(ap)
     args = ap.parse_args()
+    if args.answer:
+        args.answer = strip_seed(args.answer, SEED_PREFIX, ap, "WM3482913")
 
     if args.answer:
         level, theme, seed = args.answer[:1].upper(), args.answer[1:2], args.answer[2:]
         if level not in LEVELS or not theme.isdigit() or int(theme) > len(THEMES) or not seed.isdigit():
-            ap.error("번호는 E/M/H 글자 뒤에 숫자가 오는 형식입니다 (예: M3482913)")
+            ap.error("시드번호는 W + 난이도(E/M/H) + 숫자 형식입니다 (예: WM3482913)")
         theme = int(theme)
         if theme == 0 and not args.words:
             ap.error("낱말을 직접 넣은 판입니다. 인쇄할 때 쓴 --words 를 함께 주세요.")
@@ -181,6 +184,7 @@ def main():
         theme = 0 if args.words else names.index(args.theme) + 1 if args.theme else random.randint(1, len(THEMES))
         seed = str(random.randrange(100000, 1000000))
     number = f"{level}{theme}{seed}"
+    seed_no = SEED_PREFIX + number
     cols, rows = LEVELS[level][2:4]
 
     if theme == 0:
@@ -197,25 +201,25 @@ def main():
 
     if args.answer:
         sheet = stack(
-            render(["^ ## 낱말 찾기 정답", f"^ > No. {number} · {theme_name}"]),
+            render(["^ ## 낱말 찾기 정답", f"^ > No. {seed_no} · {theme_name}"]),
             draw_grid(grid, LEVELS[level][6], placed),
             render(["> " + ", ".join(words)]),
         )
     else:
         today = datetime.date.today().isoformat()
         sheet = stack(
-            render(["^ # 낱말 찾기", f"^ {today} · {LEVELS[level][1]} · Seed No. {number}"]),
+            render(["^ # 낱말 찾기", f"^ {today} · {LEVELS[level][1]} · Seed No. {seed_no}"]),
             draw_grid(grid, LEVELS[level][5]),
             render([f"**찾을 낱말: {theme_name} {len(words)}개**"]),
             draw_words(words),
             render([
                 f"@20 {LEVELS[level][8]}",
-                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {number}",
+                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {seed_no}",
             ]),
         )
 
-    tag = f"{number}_answer" if args.answer else number
-    print(f"No. {number} ({theme_name}, 낱말 {len(words)}개) " + output(sheet, "games/wordsearch", args, tag))
+    tag = f"{seed_no}_answer" if args.answer else seed_no
+    print(f"No. {seed_no} ({theme_name}, 낱말 {len(words)}개) " + output(sheet, "games/wordsearch", args, tag))
 
 
 if __name__ == "__main__":

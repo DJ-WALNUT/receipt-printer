@@ -4,10 +4,10 @@
     python games/minesweeper/minesweeper.py                    # 보통 난이도 한 판 인쇄
     python games/minesweeper/minesweeper.py --level hard       # easy | medium | hard
     python games/minesweeper/minesweeper.py --preview          # 인쇄 없이 이미지만 저장
-    python games/minesweeper/minesweeper.py --answer M482913   # 그 판의 정답 인쇄
+    python games/minesweeper/minesweeper.py --answer MM482913   # 그 판의 정답 인쇄
 
 이미지는 games/minesweeper/output/ 에 저장된다.
-모든 판은 정답이 하나뿐이다. 판 번호(난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
+모든 판은 정답이 하나뿐이다. 시드번호(M + 난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
 """
 import argparse
 import datetime
@@ -18,8 +18,9 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
-from receipt import PAPER_W, add_output_args, draw_run, output, render, size_style, stack
+from receipt import PAPER_W, add_output_args, strip_seed, draw_run, output, render, size_style, stack
 
+SEED_PREFIX = "M"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 LEVELS = {  # 글자: (이름, 표시, 한 변 칸 수, 지뢰 수, 남길 숫자 개수)
     "E": ("easy", "쉬움", 6, 6, 18),
     "M": ("medium", "보통", 7, 10, 18),
@@ -119,40 +120,43 @@ def draw_grid(n, clues, bombs=None, cell=64):
 def main():
     ap = argparse.ArgumentParser(description="지뢰찾기 퍼즐을 영수증 프린터로 인쇄")
     ap.add_argument("--level", choices=[v[0] for v in LEVELS.values()], default="medium")
-    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: M482913)")
+    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: MM482913)")
     add_output_args(ap)
     args = ap.parse_args()
+    if args.answer:
+        args.answer = strip_seed(args.answer, SEED_PREFIX, ap, "MM482913")
 
     if args.answer:
         level, seed = args.answer[:1].upper(), args.answer[1:]
         if level not in LEVELS or not seed.isdigit():
-            ap.error("번호는 E/M/H 글자 뒤에 숫자가 오는 형식입니다 (예: M482913)")
+            ap.error("시드번호는 M + 난이도(E/M/H) + 숫자 형식입니다 (예: MM482913)")
     else:
         level = next(k for k, v in LEVELS.items() if v[0] == args.level)
         seed = str(random.randrange(100000, 1000000))
     number = f"{level}{seed}"
+    seed_no = SEED_PREFIX + number
     _, label, n, mines, _ = LEVELS[level]
     clues, bombs = generate(level, seed)
 
     if args.answer:
         sheet = stack(
-            render(["^ ## 지뢰찾기 정답", f"^ > No. {number}"]),
+            render(["^ ## 지뢰찾기 정답", f"^ > No. {seed_no}"]),
             draw_grid(n, clues, bombs, cell=44),
             render(["> 검은 동그라미가 지뢰입니다."]),
         )
     else:
         today = datetime.date.today().isoformat()
         sheet = stack(
-            render(["^ # 지뢰찾기", f"^ {today} · {label} · Seed No. {number}"]),
+            render(["^ # 지뢰찾기", f"^ {today} · {label} · Seed No. {seed_no}"]),
             draw_grid(n, clues, cell=min(64, 540 // n)),
             render([
                 f"**빈칸 가운데 {mines}칸에 지뢰가 숨어 있습니다.**",
                 "@20 숫자는 그 칸을 둘러싼 여덟 칸에 있는 지뢰의 수입니다. 숫자 칸에는 지뢰가 없습니다.",
-                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {number}",
+                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {seed_no}",
             ]),
         )
-    tag = f"{number}_answer" if args.answer else number
-    print(f"No. {number} ({n}x{n}, 지뢰 {mines}개, 숫자 {len(clues)}개) " + output(sheet, "games/minesweeper", args, tag))
+    tag = f"{seed_no}_answer" if args.answer else seed_no
+    print(f"No. {seed_no} ({n}x{n}, 지뢰 {mines}개, 숫자 {len(clues)}개) " + output(sheet, "games/minesweeper", args, tag))
 
 
 if __name__ == "__main__":

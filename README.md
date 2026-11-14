@@ -107,7 +107,7 @@ python -m venv .venv
 .venv\Scripts\python games/sudoku/sudoku.py                    # 보통 난이도 한 판 인쇄
 .venv\Scripts\python games/sudoku/sudoku.py --level hard       # easy | medium | hard
 .venv\Scripts\python games/sudoku/sudoku.py --preview          # 종이 없이 이미지만 저장
-.venv\Scripts\python games/sudoku/sudoku.py --answer M482913   # 영수증 아래 번호로 정답 인쇄
+.venv\Scripts\python games/sudoku/sudoku.py --answer SM482913   # 영수증의 시드번호로 정답 인쇄
 ```
 
 ## 미로찾기
@@ -118,7 +118,7 @@ python -m venv .venv
 .venv\Scripts\python games/maze/maze.py                    # 보통 난이도 한 판 인쇄
 .venv\Scripts\python games/maze/maze.py --level hard       # easy | medium | hard
 .venv\Scripts\python games/maze/maze.py --preview          # 종이 없이 이미지만 저장
-.venv\Scripts\python games/maze/maze.py --answer M482913   # 영수증 아래 번호로 정답 인쇄
+.venv\Scripts\python games/maze/maze.py --answer ZM482913   # 영수증의 시드번호로 정답 인쇄
 ```
 
 칸 수와 칸 크기는 `games/maze/maze.py` 맨 위 `LEVELS`에서 바꾼다.
@@ -133,10 +133,10 @@ python -m venv .venv
 .venv\Scripts\python games/wordsearch/wordsearch.py --theme animal       # animal | food | fruit | school | space
 .venv\Scripts\python games/wordsearch/wordsearch.py --words "나름,청소년,광명,동아리"   # 낱말 직접 지정
 .venv\Scripts\python games/wordsearch/wordsearch.py --preview            # 종이 없이 이미지만 저장
-.venv\Scripts\python games/wordsearch/wordsearch.py --answer M3482913    # 영수증 아래 번호로 정답 인쇄
+.venv\Scripts\python games/wordsearch/wordsearch.py --answer WM3482913    # 영수증의 시드번호로 정답 인쇄
 ```
 
-판 번호는 난이도 글자 + 주제 숫자 + 여섯 자리 숫자다. 낱말을 직접 지정한 판(주제 숫자 0)의 정답은 `--answer E0123456 --words "..."`처럼 같은 낱말을 다시 줘야 한다. 주제별 낱말은 `games/wordsearch/wordsearch.py`의 `THEMES`에서 고친다. 새 주제는 맨 뒤에 추가한다 (순서나 낱말을 바꾸면 예전 번호의 정답이 달라진다).
+시드번호는 W + 난이도 글자 + 주제 숫자 + 여섯 자리 숫자다. 낱말을 직접 지정한 판(주제 숫자 0)의 정답은 `--answer WE0123456 --words "..."`처럼 같은 낱말을 다시 줘야 한다. 주제별 낱말은 `games/wordsearch/wordsearch.py`의 `THEMES`에서 고친다. 새 주제는 맨 뒤에 추가한다 (순서나 낱말을 바꾸면 예전 번호의 정답이 달라진다).
 
 ## 오목판
 
@@ -157,8 +157,8 @@ python -m venv .venv
 ```powershell
 .venv\Scripts\python games/nonogram/nonogram.py                # 쉬움 한 판 (약 9cm)
 .venv\Scripts\python games/nonogram/nonogram.py --level hard   # easy | hard
-.venv\Scripts\python games/nonogram/nonogram.py --answer E03   # 정답 그림 인쇄
-.venv\Scripts\python games/nonogram/nonogram.py --list         # 판 번호와 그림 이름 보기
+.venv\Scripts\python games/nonogram/nonogram.py --answer NE03   # 정답 그림 인쇄
+.venv\Scripts\python games/nonogram/nonogram.py --list         # 시드번호와 그림 이름 보기
 ```
 
 그림은 `games/nonogram/nonogram.py`의 `PICTURES`에 `#`과 `.`으로 그려 맨 뒤에 추가한다. 찍어야만 풀리는 그림은 자동으로 빠진다.
@@ -170,7 +170,7 @@ python -m venv .venv
 ```powershell
 .venv\Scripts\python games/minesweeper/minesweeper.py                    # 보통 한 판 (약 9cm)
 .venv\Scripts\python games/minesweeper/minesweeper.py --level hard       # easy | medium | hard
-.venv\Scripts\python games/minesweeper/minesweeper.py --answer M482913   # 정답 인쇄
+.venv\Scripts\python games/minesweeper/minesweeper.py --answer MM482913   # 정답 인쇄
 ```
 
 ## 부등호 스도쿠
@@ -180,7 +180,7 @@ python -m venv .venv
 ```powershell
 .venv\Scripts\python games/futoshiki/futoshiki.py                    # 보통 한 판 (약 9cm)
 .venv\Scripts\python games/futoshiki/futoshiki.py --level hard       # easy | medium | hard
-.venv\Scripts\python games/futoshiki/futoshiki.py --answer M482913   # 정답 인쇄
+.venv\Scripts\python games/futoshiki/futoshiki.py --answer FM482913   # 정답 인쇄
 ```
 
 ## 다른 그림 찾기
@@ -190,7 +190,7 @@ python -m venv .venv
 ```powershell
 .venv\Scripts\python games/spot/spot.py                    # 다른 곳 5군데 (약 6cm)
 .venv\Scripts\python games/spot/spot.py --count 7          # 다른 곳 개수 (3~8)
-.venv\Scripts\python games/spot/spot.py --answer 5482913   # 정답 인쇄 (다른 곳에 동그라미)
+.venv\Scripts\python games/spot/spot.py --answer D5482913   # 정답 인쇄 (다른 곳에 동그라미)
 ```
 
 ## 점과 상자
@@ -252,7 +252,7 @@ python -m venv .venv
 .venv\Scripts\python fortune/loot/loot.py                 # 랜덤 아이템 감정서 한 장
 .venv\Scripts\python fortune/loot/loot.py --loop          # Enter를 누를 때마다 한 장 (버튼 자판기 모드)
 .venv\Scripts\python fortune/loot/loot.py --level 20      # 아이템 레벨 지정
-.venv\Scripts\python fortune/loot/loot.py --seed 482913   # 같은 번호의 아이템 다시 뽑기
+.venv\Scripts\python fortune/loot/loot.py --seed L482913   # 같은 시드번호의 아이템 다시 뽑기
 .venv\Scripts\python fortune/loot/loot.py --preview       # 종이 없이 이미지만 저장
 ```
 
@@ -292,7 +292,7 @@ python -m venv .venv
 ```powershell
 .venv\Scripts\python fortune/tarot/tarot.py                 # 한 장 뽑기 (약 14cm)
 .venv\Scripts\python fortune/tarot/tarot.py --loop          # Enter를 누를 때마다 한 장
-.venv\Scripts\python fortune/tarot/tarot.py --seed 482913   # 같은 번호의 결과 다시 뽑기
+.venv\Scripts\python fortune/tarot/tarot.py --seed T482913   # 같은 시드번호의 결과 다시 뽑기
 .venv\Scripts\python fortune/tarot/tarot.py --card 16       # 카드 지정 (0~21), --reversed 로 역방향
 .venv\Scripts\python fortune/tarot/tarot.py --preview       # 종이 없이 이미지만 저장
 ```

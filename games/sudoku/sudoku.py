@@ -4,10 +4,10 @@
     python games/sudoku/sudoku.py                    # 보통 난이도 한 판 인쇄
     python games/sudoku/sudoku.py --level hard       # easy | medium | hard
     python games/sudoku/sudoku.py --preview          # 인쇄 없이 이미지만 저장
-    python games/sudoku/sudoku.py --answer M482913   # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
+    python games/sudoku/sudoku.py --answer SM482913   # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
 
 이미지는 games/sudoku/output/ 에 저장된다.
-모든 퍼즐은 정답이 하나뿐이다. 판 번호(난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
+모든 퍼즐은 정답이 하나뿐이다. 시드번호(S + 난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
 """
 import argparse
 import datetime
@@ -18,8 +18,9 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
-from receipt import FONT_DIR, PAPER_W, add_output_args, output, render, stack
+from receipt import FONT_DIR, PAPER_W, add_output_args, strip_seed, output, render, stack
 
+SEED_PREFIX = "S"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 LEVELS = {  # 글자: (이름, 표시, 남길 숫자 개수)
     "E": ("easy", "쉬움", 40),
     "M": ("medium", "보통", 32),
@@ -144,40 +145,43 @@ def draw_grid(puzzle, solution=None, cell=60, scale=3):
 def main():
     ap = argparse.ArgumentParser(description="스도쿠를 영수증 프린터로 인쇄")
     ap.add_argument("--level", choices=[v[0] for v in LEVELS.values()], default="medium")
-    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: M482913)")
+    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: SM482913)")
     add_output_args(ap)
     args = ap.parse_args()
+    if args.answer:
+        args.answer = strip_seed(args.answer, SEED_PREFIX, ap, "SM482913")
 
     if args.answer:
         level, seed = args.answer[0].upper(), args.answer[1:]
         if level not in LEVELS or not seed.isdigit():
-            ap.error("번호는 E/M/H 글자 뒤에 숫자가 오는 형식입니다 (예: M482913)")
+            ap.error("시드번호는 S + 난이도(E/M/H) + 숫자 형식입니다 (예: SM482913)")
     else:
         level = next(k for k, v in LEVELS.items() if v[0] == args.level)
         seed = str(random.randrange(100000, 1000000))
     number = f"{level}{seed}"
+    seed_no = SEED_PREFIX + number
     puzzle, solution = generate(level, seed)
     clues = sum(1 for v in puzzle if v)
 
     if args.answer:
         sheet = stack(
-            render([f"^ ## 스도쿠 정답", f"^ > No. {number}"]),
+            render([f"^ ## 스도쿠 정답", f"^ > No. {seed_no}"]),
             draw_grid(puzzle, solution, cell=44, scale=2),
             render(["> 굵은 숫자가 처음에 주어진 숫자입니다."]),
         )
     else:
         today = datetime.date.today().isoformat()
         sheet = stack(
-            render(["^ # 스도쿠", f"^ {today} · {LEVELS[level][1]} · Seed No. {number}"]),
+            render(["^ # 스도쿠", f"^ {today} · {LEVELS[level][1]} · Seed No. {seed_no}"]),
             draw_grid(puzzle),
             render([
                 "@20 가로줄, 세로줄, 3x3 칸에 1~9를 한 번씩 채우세요.",
-                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {number}",
+                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {seed_no}",
             ]),
         )
 
-    tag = f"{number}_answer" if args.answer else number
-    print(f"No. {number} (주어진 숫자 {clues}개) " + output(sheet, "games/sudoku", args, tag))
+    tag = f"{seed_no}_answer" if args.answer else seed_no
+    print(f"No. {seed_no} (주어진 숫자 {clues}개) " + output(sheet, "games/sudoku", args, tag))
 
 
 if __name__ == "__main__":

@@ -6,10 +6,10 @@
     python games/spot/spot.py                   # 다른 곳 5군데
     python games/spot/spot.py --count 7         # 다른 곳 개수 (3~8)
     python games/spot/spot.py --preview         # 인쇄 없이 이미지만 저장
-    python games/spot/spot.py --answer 5482913  # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
+    python games/spot/spot.py --answer D5482913  # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
 
 이미지는 games/spot/output/ 에 저장된다.
-판 번호는 다른 곳 개수 + 여섯 자리 숫자다. 번호만 있으면 같은 판과 정답을 다시 만들 수 있다.
+시드번호는 D + 다른 곳 개수 + 여섯 자리 숫자다. 번호만 있으면 같은 판과 정답을 다시 만들 수 있다.
 """
 import argparse
 import datetime
@@ -19,10 +19,11 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+SEED_PREFIX = "D"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))             # 공용 모듈 receipt.py
 sys.path.insert(0, str(ROOT / "fortune" / "tarot"))   # 카드 그림
-from receipt import PAPER_W, add_output_args, output, render, stack
+from receipt import PAPER_W, add_output_args, strip_seed, output, render, stack
 import tarot
 
 SCALE = 3
@@ -83,38 +84,41 @@ def circled(changed, spots):
 def main():
     ap = argparse.ArgumentParser(description="다른 그림 찾기를 영수증 프린터로 인쇄")
     ap.add_argument("--count", type=int, default=5, help="다른 곳 개수 (3~8, 기본 5)")
-    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: 5482913)")
+    ap.add_argument("--answer", metavar="번호", help="해당 판의 정답을 인쇄 (예: D5482913)")
     add_output_args(ap)
     args = ap.parse_args()
+    if args.answer:
+        args.answer = strip_seed(args.answer, SEED_PREFIX, ap, "D5482913")
 
     if args.answer:
         number = args.answer
         if not (number.isdigit() and len(number) > 1 and 3 <= int(number[0]) <= 8):
-            ap.error("번호는 숫자로만 되어 있고 첫 자리가 3~8입니다 (예: 5482913)")
+            ap.error("시드번호는 D 뒤에 숫자가 오고 그 첫 자리가 3~8입니다 (예: D5482913)")
     else:
         if not 3 <= args.count <= 8:
             ap.error("--count는 3~8 사이여야 합니다")
         number = f"{args.count}{random.randrange(100000, 1000000)}"
+    seed_no = SEED_PREFIX + number
     original, changed, spots = make(number)
 
     if args.answer:
         sheet = stack(
-            render(["^ ## 다른 그림 찾기 정답", f"^ > No. {number}"]),
+            render(["^ ## 다른 그림 찾기 정답", f"^ > No. {seed_no}"]),
             circled(changed, spots),
             render([f"> 동그라미 친 {len(spots)}군데가 다릅니다."]),
         )
     else:
         today = datetime.date.today().isoformat()
         sheet = stack(
-            render(["^ # 다른 그림 찾기", f"^ {today} · Seed No. {number}"]),
+            render(["^ # 다른 그림 찾기", f"^ {today} · Seed No. {seed_no}"]),
             side_by_side(big(original), big(changed)),
             render([
                 f"**두 그림에서 다른 곳 {len(spots)}군데를 찾으세요.**",
-                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {number}",
+                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {seed_no}",
             ]),
         )
-    tag = f"{number}_answer" if args.answer else number
-    print(f"No. {number} (다른 곳 {len(spots)}군데) " + output(sheet, "games/spot", args, tag))
+    tag = f"{seed_no}_answer" if args.answer else seed_no
+    print(f"No. {seed_no} (다른 곳 {len(spots)}군데) " + output(sheet, "games/spot", args, tag))
 
 
 if __name__ == "__main__":

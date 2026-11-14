@@ -317,6 +317,17 @@ def save_output(sheet, content, tag=""):
     return path
 
 
+def strip_seed(text, prefix, ap, example):
+    """시드번호 맨 앞의 콘텐츠 글자를 떼고 나머지를 돌려준다. 글자가 다르면 사용법 오류로 끝낸다.
+
+    시드번호는 콘텐츠마다 다른 글자로 시작한다 (스도쿠 S, 타로 T ...). 대소문자는 가리지 않는다.
+    """
+    text = text.strip()
+    if text[:1].upper() != prefix:
+        ap.error(f"시드번호는 {prefix}로 시작합니다 (예: {example})")
+    return text[1:]
+
+
 def add_output_args(ap):
     # 다른 PC에서는 포트 번호가 다르다. 환경 변수 RECEIPT_PORT로 기본값을 바꿀 수 있다.
     ap.add_argument("--port", default=os.environ.get("RECEIPT_PORT", "COM17"),
