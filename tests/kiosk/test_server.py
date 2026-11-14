@@ -1,0 +1,162 @@
+"""키오스크 서버: 메뉴를 내려주고, 인쇄 요청을 검사해 대기열에 넣는다."""
+import os
+import time
+
+import pytest
+
+import hub
+from fakes import FakeRunner
+from kiosk.jobs import JobQueue
+from kiosk.server import cleanup_outputs, create_app
+
+
+def make_client(pin="1234", gate=False):
+    runner = FakeRunner(gate=gate)
+    app = create_app(queue=JobQueue(runner=runner), pin=pin)
+    client = app.test_client()
+    client.runner = runner
+    return client
+
+
+@pytest.fixture
+def client():
+    return make_client()
+
+
+def poll(client, job_id, state, seconds=3):
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        job = client.get(f"/api/jobs/{job_id}").get_json()
+        if job["state"] == state:
+            return job
+        time.sleep(0.01)
+    raise AssertionError(job)
+
+
+def all_items(menu):
+    for item in menu:
+        yield from (all_items(item["items"]) if item["kind"] == "group" else [item])
+
+
+def test_index_and_fonts(client):
+    assert client.get("/").status_code == 200
+    font = client.get("/fonts/Galmuri11.ttf")
+    assert font.status_code == 200 and len(font.data) > 10000
+    assert client.get("/fonts/LICENSE.txt").status_code == 404
+    assert client.get("/fonts/../hub.py").status_code == 404
+
+
+def test_catalog_for_visitor(client):
+    d = client.get("/api/catalog").get_json()
+    assert d["role"] == "visitor" and d["max_sheets"] == 4 and d["admin_enabled"] is True
+    items = {i["name"]: i for i in all_items(d["menu"])}
+    assert "text" not in items and len(items) == 17
+    assert [m["id"] for m in items["bingo"]["modes"]] == ["new"]
+    pick = items["ladder"]["modes"][0]["fields"][0]
+    assert pick["type"] == "pick" and len(pick["options"]) == 20 and "호랑이" in pick["options"]
+
+
+def test_print_and_poll(client):
+    r = client.post("/api/print", json={"content": "sudoku", "mode": "new", "values": {"level": "hard"}, "sheets": 2})
+    assert r.status_code == 202
+    job = poll(client, r.get_json()["id"], "done")
+    assert job["done"] == 2 and job["title"] == "스도쿠"
+    script, args, _ = client.runner.calls[0]
+    assert script.name == "sudoku.py" and args == ["--level", "hard"]
+    assert client.get("/api/jobs/nope").status_code == 404
+
+
+def test_visitor_picks_nicknames_for_ladder(client):
+    body = {"content": "ladder", "mode": "new", "values": {"names": ["호랑이", "토끼", "곰"]}, "sheets": 1}
+    r = client.post("/api/print", json=body)
+    assert r.status_code == 202
+    poll(client, r.get_json()["id"], "done")
+    assert client.runner.calls[0][1] == ["--names", "호랑이,토끼,곰", "--wins", "1"]
+
+
+@pytest.mark.parametrize("body", [
+    {"content": "sudoku", "mode": "new", "values": {}, "sheets": 5},                  # 방문자는 4장까지
+    {"content": "bingo", "mode": "blank", "values": {}, "sheets": 1},                # 운영자 전용 모드
+    {"content": "text", "mode": "new", "values": {}, "sheets": 1},                   # 키오스크에 없는 콘텐츠
+    {"content": "nope", "mode": "new", "values": {}, "sheets": 1},
+    {"content": "tarot", "mode": "again", "values": {"seed": "안녕하세요"}, "sheets": 1},
+    {"content": "ladder", "mode": "new", "values": {"names": ["민수", "지아"]}, "sheets": 1},
+    {"content": "sudoku", "mode": "new", "values": "x", "sheets": 1},
+    {"content": "sudoku", "mode": "new"},
+    {"content": ["sudoku"], "mode": "new", "values": {}, "sheets": 1},
+    [1, 2, 3],
+])
+def test_visitor_requests_are_refused(client, body):
+    r = client.post("/api/print", json=body)
+    assert r.status_code == 400 and r.get_json()["error"]
+    assert client.runner.calls == []
+
+
+def test_not_json_is_refused(client):
+    r = client.post("/api/print", data="hello", content_type="text/plain")
+    assert r.status_code == 400 and r.get_json()["error"]
+
+
+def test_busy_gives_409():
+    c = make_client(gate=True)
+    body = {"content": "tarot", "mode": "new", "values": {}, "sheets": 1}
+    assert c.post("/api/print", json=body).status_code == 202
+    r = c.post("/api/print", json=body)
+    assert r.status_code == 409 and "다른 인쇄" in r.get_json()["error"]
+    c.runner.gate.set()
+
+
+def test_admin_login_unlocks_staff(client):
+    assert client.post("/api/admin/login", json={"pin": "0000"}).status_code == 403
+    assert client.get("/api/admin/jobs").status_code == 403
+    assert client.post("/api/admin/cancel").status_code == 403
+    assert client.post("/api/admin/login", json={"pin": "1234"}).status_code == 200
+    d = client.get("/api/catalog").get_json()
+    assert d["role"] == "staff" and d["max_sheets"] == 20
+    assert "blank" in [m["id"] for i in all_items(d["menu"]) if i["name"] == "bingo" for m in i["modes"]]
+    r = client.post("/api/print", json={"content": "bingo", "mode": "blank", "values": {}, "sheets": 20})
+    assert r.status_code == 202
+    assert r.get_json()["id"] in [j["id"] for j in client.get("/api/admin/jobs").get_json()]
+    assert "cancelled" in client.post("/api/admin/cancel").get_json()
+    client.post("/api/admin/logout")
+    assert client.get("/api/catalog").get_json()["role"] == "visitor"
+    assert client.get("/api/admin/jobs").status_code == 403
+
+
+def test_staff_session_expires_after_five_idle_minutes(client, monkeypatch):
+    import kiosk.server as server
+    client.post("/api/admin/login", json={"pin": "1234"})
+    now = time.time()
+    monkeypatch.setattr(server.time, "time", lambda: now + 4 * 60)
+    assert client.get("/api/catalog").get_json()["role"] == "staff"      # 쓰는 동안은 연장된다
+    monkeypatch.setattr(server.time, "time", lambda: now + 8 * 60)
+    assert client.get("/api/catalog").get_json()["role"] == "staff"
+    monkeypatch.setattr(server.time, "time", lambda: now + 14 * 60)
+    assert client.get("/api/catalog").get_json()["role"] == "visitor"
+
+
+def test_five_wrong_pins_lock_login(client):
+    for _ in range(5):
+        assert client.post("/api/admin/login", json={"pin": "0000"}).status_code == 403
+    assert client.post("/api/admin/login", json={"pin": "1234"}).status_code == 429
+
+
+def test_admin_disabled_without_pin():
+    c = make_client(pin=None)
+    assert c.get("/api/catalog").get_json()["admin_enabled"] is False
+    assert c.post("/api/admin/login", json={"pin": ""}).status_code == 403
+    assert c.post("/api/admin/login", json={}).status_code == 403
+
+
+def test_cleanup_outputs(tmp_path):
+    old = tmp_path / "games/sudoku/output/a.png"
+    new = tmp_path / "games/sudoku/output/b.png"
+    keep = tmp_path / "games/sudoku/pic.png"
+    for p in (old, new, keep):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(b"x")
+    past = time.time() - 8 * 86400
+    os.utime(old, (past, past))
+    os.utime(keep, (past, past))
+    assert cleanup_outputs(tmp_path, 7) == 1
+    assert not old.exists() and new.exists() and keep.exists()
