@@ -1,4 +1,4 @@
-title = "maimai 레이팅 영수증"
+title = "maimai 레이팅"
 order = 40
 wait_between = 5   # maishift가 요청 간격 5초를 요구한다
 
