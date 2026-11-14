@@ -17,11 +17,20 @@ echo "== 2/5 파이썬 가상환경"
 .venv/bin/pip install --quiet --upgrade pip
 .venv/bin/pip install --quiet -r kiosk/requirements.txt
 
-echo "== 3/5 프린터 권한과 고정 경로(/dev/receipt)"
+echo "== 3/5 프린터 권한과 고정 경로(/dev/receipt), 와이파이 절전 끄기"
 sudo usermod -aG dialout "$USER"
 sudo cp deploy/99-receipt-printer.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules
 sudo udevadm trigger --subsystem-match=tty
+
+# 와이파이 절전을 끈다. 켜져 있으면 파이가 무선 기기(아이패드)의 요청과 이름 찾기(.local)를
+# 놓쳐서 됐다 안 됐다 한다. 모든 와이파이 연결에 적용되므로 다른 공유기에 붙여도 유지된다.
+if [ -d /etc/NetworkManager/conf.d ]; then
+    printf '[connection]\nwifi.powersave = 2\n' | sudo tee /etc/NetworkManager/conf.d/wifi-powersave-off.conf > /dev/null
+    if command -v iw > /dev/null && iw dev wlan0 info > /dev/null 2>&1; then
+        sudo iw dev wlan0 set power_save off || true
+    fi
+fi
 
 echo "== 4/5 설정 파일 ($ENV_FILE)"
 if sudo test -f "$ENV_FILE"; then
