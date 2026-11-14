@@ -19,6 +19,7 @@
     왼쪽 || 오른쪽    양쪽 정렬 (예: "아메리카노 || 4,500")
 """
 import datetime
+import os
 import re
 import sys
 import time
@@ -317,7 +318,9 @@ def save_output(sheet, content, tag=""):
 
 
 def add_output_args(ap):
-    ap.add_argument("--port", default="COM17")
+    # 다른 PC에서는 포트 번호가 다르다. 환경 변수 RECEIPT_PORT로 기본값을 바꿀 수 있다.
+    ap.add_argument("--port", default=os.environ.get("RECEIPT_PORT", "COM17"),
+                    help="프린터 시리얼 포트 (기본: 환경 변수 RECEIPT_PORT, 없으면 COM17)")
     ap.add_argument("--preview", action="store_true", help="인쇄하지 않고 이미지만 저장")
     ap.add_argument("--no-cut", action="store_true", help="인쇄 후 자르지 않음")
 

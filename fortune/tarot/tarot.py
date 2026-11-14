@@ -1,14 +1,14 @@
 """오늘의 타로: 메이저 아르카나 한 장을 도트 카드 그림과 함께 영수증 프린터로 인쇄한다.
 
 사용법 (프로젝트 폴더에서):
-    python tarot/tarot.py                 # 한 장 뽑기
-    python tarot/tarot.py --loop          # Enter를 누를 때마다 한 장
-    python tarot/tarot.py --seed 482913   # 같은 번호의 결과 다시 뽑기
-    python tarot/tarot.py --card 16       # 카드 지정 (0~21), --reversed 로 역방향
-    python tarot/tarot.py --preview       # 인쇄 없이 이미지만 저장
+    python fortune/tarot/tarot.py                 # 한 장 뽑기
+    python fortune/tarot/tarot.py --loop          # Enter를 누를 때마다 한 장
+    python fortune/tarot/tarot.py --seed 482913   # 같은 번호의 결과 다시 뽑기
+    python fortune/tarot/tarot.py --card 16       # 카드 지정 (0~21), --reversed 로 역방향
+    python fortune/tarot/tarot.py --preview       # 인쇄 없이 이미지만 저장
 
 카드 그림은 71x95 도트로 직접 그린 것이고, '카드 효과'는 게임 Balatro의 타로 효과를 일상 버전으로 바꾼 농담이다.
-이미지는 tarot/output/ 에 저장된다.
+이미지는 fortune/tarot/output/ 에 저장된다.
 """
 import argparse
 import datetime
@@ -19,7 +19,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # 공용 모듈 receipt.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
 from receipt import FONT_DIR, PAPER_W, add_output_args, output, raw, render, stack
 
 CARD_W, CARD_H, CARD_SCALE = 71, 95, 4     # 카드 원본 크기(도트)와 인쇄 배율
@@ -581,7 +581,7 @@ def centered(im, pad=10):
 
 def draw_card(seed, index=None, reversed_=None):
     """한 번 뽑기 -> 결과 dict. 같은 seed면 같은 결과."""
-    rng = random.Random(f"tarot/{seed}")
+    rng = random.Random(f"fortune/tarot/{seed}")
     picked = rng.randrange(len(CARDS))
     flipped = rng.random() < REVERSED_CHANCE
     hand = rng.choices(HANDS, weights=[h[3] for h in HANDS])[0]
@@ -635,7 +635,7 @@ def draw_one(args, seed):
     ko = CARDS[result["index"]][1]
     way = "역방향" if result["reversed"] else "정방향"
     print(f"No. {seed}: {ROMAN[result['index']]} {ko} ({way}) -> "
-          + output(build_sheet(result, seed), "tarot", args, f"{seed}_{CARDS[result['index']][0].replace(' ', '')}"))
+          + output(build_sheet(result, seed), "fortune/tarot", args, f"{seed}_{CARDS[result['index']][0].replace(' ', '')}"))
 
 
 def main():

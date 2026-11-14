@@ -1,13 +1,13 @@
 """TRPG 전리품 뽑기: 랜덤 아이템 감정서를 영수증 프린터로 인쇄한다.
 
 사용법 (프로젝트 폴더에서):
-    python loot/loot.py                 # 한 장 뽑기
-    python loot/loot.py --loop          # Enter를 누를 때마다 한 장 (버튼 자판기 모드)
-    python loot/loot.py --level 20      # 아이템 레벨 지정 (기본: 1~30 무작위)
-    python loot/loot.py --seed 482913   # 같은 번호의 아이템 다시 뽑기
-    python loot/loot.py --preview       # 인쇄 없이 이미지만 저장
+    python fortune/loot/loot.py                 # 한 장 뽑기
+    python fortune/loot/loot.py --loop          # Enter를 누를 때마다 한 장 (버튼 자판기 모드)
+    python fortune/loot/loot.py --level 20      # 아이템 레벨 지정 (기본: 1~30 무작위)
+    python fortune/loot/loot.py --seed 482913   # 같은 번호의 아이템 다시 뽑기
+    python fortune/loot/loot.py --preview       # 인쇄 없이 이미지만 저장
 
-이미지는 loot/output/ 에 저장된다.
+이미지는 fortune/loot/output/ 에 저장된다.
 """
 import argparse
 import random
@@ -16,7 +16,7 @@ from pathlib import Path
 
 from PIL import Image
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # 공용 모듈 receipt.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
 from receipt import PAPER_W, add_output_args, output, render, stack
 
 # (이름, 확률 가중치, 능력치 배율, 추가 옵션 수, 별)
@@ -306,7 +306,7 @@ def build_sheet(item, number):
 def draw_one(args, seed):
     item = roll(seed, args.level)
     sheet = build_sheet(item, seed)
-    print(f"No. {seed}: [{item['rarity']}] {item['name']} -> " + output(sheet, "loot", args, seed))
+    print(f"No. {seed}: [{item['rarity']}] {item['name']} -> " + output(sheet, "fortune/loot", args, seed))
 
 
 def main():

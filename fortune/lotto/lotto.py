@@ -1,15 +1,15 @@
 """나름로또: 실제 로또 용지처럼 생긴 나름청소년활동센터 체험용 복권을 인쇄한다.
 
 사용법 (프로젝트 폴더에서):
-    python lotto/lotto.py                        # 자동 5게임 한 장
-    python lotto/lotto.py --games 3              # 한 장에 3게임
-    python lotto/lotto.py --sheets 5             # 다섯 장 연속 인쇄
-    python lotto/lotto.py --manual "3 11 17 24 38 42"   # 수동 한 게임 + 나머지 자동
-    python lotto/lotto.py --prize "문화상품권"    # 상품 칸에 찍을 글자 (없으면 손으로 적는 밑줄)
-    python lotto/lotto.py --draw                 # 이번 회차 추첨 결과 용지
-    python lotto/lotto.py --preview              # 인쇄 없이 이미지만 저장
+    python fortune/lotto/lotto.py                        # 자동 5게임 한 장
+    python fortune/lotto/lotto.py --games 3              # 한 장에 3게임
+    python fortune/lotto/lotto.py --sheets 5             # 다섯 장 연속 인쇄
+    python fortune/lotto/lotto.py --manual "3 11 17 24 38 42"   # 수동 한 게임 + 나머지 자동
+    python fortune/lotto/lotto.py --prize "문화상품권"    # 상품 칸에 찍을 글자 (없으면 손으로 적는 밑줄)
+    python fortune/lotto/lotto.py --draw                 # 이번 회차 추첨 결과 용지
+    python fortune/lotto/lotto.py --preview              # 인쇄 없이 이미지만 저장
 
-이미지는 lotto/output/ 에 저장된다. 숫자 범위와 개수는 바로 아래 설정에서 바꾼다.
+이미지는 fortune/lotto/output/ 에 저장된다. 숫자 범위와 개수는 바로 아래 설정에서 바꾼다.
 """
 import argparse
 import datetime
@@ -19,7 +19,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # 공용 모듈 receipt.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
 from receipt import CONTENT_W, PAPER_W, STYLES, add_output_args, output, raw, render, size_style, stack, text_width
 
 # ------------------------------------------------------------------ 설정 (여기만 고치면 된다)
@@ -200,12 +200,12 @@ def main():
     rng = random.SystemRandom()
     now = datetime.datetime.now()
     if args.draw:
-        print(f"제 {round_number(now.date())} 회 추첨 결과 -> " + output(build_draw(now, rng, args.prize), "lotto", args, "draw"))
+        print(f"제 {round_number(now.date())} 회 추첨 결과 -> " + output(build_draw(now, rng, args.prize), "fortune/lotto", args, "draw"))
         return
     for _ in range(args.sheets):
         games = [("수동", m) for m in manual] + [("자동", pick(rng)) for _ in range(args.games - len(manual))]
         sheet, serial = build_ticket(games, now, rng, args.prize)
-        print(f"{len(games)}게임 -> " + output(sheet, "lotto", args, serial))
+        print(f"{len(games)}게임 -> " + output(sheet, "fortune/lotto", args, serial))
 
 
 if __name__ == "__main__":

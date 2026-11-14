@@ -1,12 +1,12 @@
 """스도쿠 한 판을 만들어 영수증 프린터로 인쇄한다.
 
 사용법 (프로젝트 폴더에서):
-    python sudoku/sudoku.py                    # 보통 난이도 한 판 인쇄
-    python sudoku/sudoku.py --level hard       # easy | medium | hard
-    python sudoku/sudoku.py --preview          # 인쇄 없이 이미지만 저장
-    python sudoku/sudoku.py --answer M482913   # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
+    python games/sudoku/sudoku.py                    # 보통 난이도 한 판 인쇄
+    python games/sudoku/sudoku.py --level hard       # easy | medium | hard
+    python games/sudoku/sudoku.py --preview          # 인쇄 없이 이미지만 저장
+    python games/sudoku/sudoku.py --answer M482913   # 그 판의 정답 인쇄 (번호는 영수증 아래에 찍힘)
 
-이미지는 sudoku/output/ 에 저장된다.
+이미지는 games/sudoku/output/ 에 저장된다.
 모든 퍼즐은 정답이 하나뿐이다. 판 번호(난이도 글자 + 숫자)만 있으면 같은 판과 정답을 다시 만들 수 있다.
 """
 import argparse
@@ -17,7 +17,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # 공용 모듈 receipt.py
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
 from receipt import FONT_DIR, PAPER_W, add_output_args, output, render, stack
 
 LEVELS = {  # 글자: (이름, 표시, 남길 숫자 개수)
@@ -168,16 +168,16 @@ def main():
     else:
         today = datetime.date.today().isoformat()
         sheet = stack(
-            render(["^ # 스도쿠", f"^ {today} · {LEVELS[level][1]} · No. {number}"]),
+            render(["^ # 스도쿠", f"^ {today} · {LEVELS[level][1]} · Seed No. {number}"]),
             draw_grid(puzzle),
             render([
                 "@20 가로줄, 세로줄, 3x3 칸에 1~9를 한 번씩 채우세요.",
-                f"@20 정답: python sudoku/sudoku.py --answer {number}",
+                f"@20 정답: 시드번호 지참해서 사무실에 문의하세요 - {number}",
             ]),
         )
 
     tag = f"{number}_answer" if args.answer else number
-    print(f"No. {number} (주어진 숫자 {clues}개) " + output(sheet, "sudoku", args, tag))
+    print(f"No. {number} (주어진 숫자 {clues}개) " + output(sheet, "games/sudoku", args, tag))
 
 
 if __name__ == "__main__":
