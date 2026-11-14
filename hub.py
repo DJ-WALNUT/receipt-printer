@@ -22,11 +22,26 @@ MAX_SHEETS = {VISITOR: 4, STAFF: 20}
 FIELD_TYPES = ("choice", "number", "text", "names")
 AUDIENCES = ("all", "staff")
 SKIP_DIRS = {".venv", "venv", "node_modules", "__pycache__", "tests"}
-CONTROL = re.compile(r"[\x00-\x1f\x7f]")
+CONTROL = re.compile("[\x00-\x1f\x7f\x85  ]")   # 제어 문자와 줄 나눔 문자
+
+# 설정 파일에 쓸 수 있는 키. 여기 없는 키는 오타로 보고 오류로 알린다.
+# (audience 를 audiance 로 잘못 쓰면 운영자 전용이 방문자에게 열리기 때문에 조용히 넘기지 않는다.)
+CONTENT_KEYS = {"title", "order", "kiosk", "wait_between", "script", "seed_prefix", "mode"}
+MODE_KEYS = {"id", "label", "audience", "sheets", "args", "field"}
+FIELD_KEYS = {"id", "type", "label", "arg", "audience", "default", "choices", "min", "max",
+              "pattern", "max_length", "example", "required"}
+GROUP_KEYS = {"title", "order"}
 
 
 class HubError(ValueError):
-    """입력값이나 설정이 잘못됐다. str(e)는 사용자에게 그대로 보여줄 문장이다."""
+    """입력값이나 설정이 잘못됐다. str(e)는 사용자에게 그대로 보여줄 문장이다.
+
+    field 는 어느 입력 항목 때문인지 (항목 id). 특정 항목 탓이 아니면 None.
+    """
+
+    def __init__(self, message, field=None):
+        super().__init__(message)
+        self.field = field
 
 
 @dataclass(frozen=True)
@@ -95,6 +110,16 @@ class Catalog:
 
 # ---------------------------------------------------------------- 설정 파일 읽기
 
+def _table(value, allowed, where):
+    """설정의 한 덩어리가 표(dict)이고 아는 키만 담고 있는지 확인한다."""
+    if not isinstance(value, dict):
+        raise HubError(f"{where}: 표 모양이 아닙니다 ([[mode]] 나 [[mode.field]] 로 적어 주세요)")
+    unknown = sorted(set(value) - allowed)
+    if unknown:
+        raise HubError(f"{where}: 모르는 키 {', '.join(unknown)} (오타인지 확인해 주세요)")
+    return value
+
+
 def _need(table, key, kind, where):
     if key not in table:
         raise HubError(f"{where}: '{key}'가 없습니다")
@@ -118,6 +143,7 @@ def _audience(table, where):
 
 
 def _parse_field(table, where):
+    _table(table, FIELD_KEYS, f"{where} 항목")
     fid = _need(table, "id", str, where)
     where = f"{where} 항목 '{fid}'"
     ftype = _need(table, "type", str, where)
@@ -170,6 +196,7 @@ def _unique(items, what, where):
 
 
 def _parse_mode(table, where):
+    _table(table, MODE_KEYS, f"{where} 모드")
     mid = _need(table, "id", str, where)
     where = f"{where} 모드 '{mid}'"
     args = _typed(table, "args", list, where, [])
@@ -178,7 +205,13 @@ def _parse_mode(table, where):
     raw_fields = _typed(table, "field", list, where, [])
     fields = tuple(_parse_field(f, where) for f in raw_fields)
     _unique(fields, "항목", where)
-    return Mode(mid, _need(table, "label", str, where), _audience(table, where),
+    audience = _audience(table, where)
+    for field in fields:
+        # 방문자가 넣은 글자는 영수증에 그대로 찍힌다. 형식을 정하지 않은 칸을 방문자에게 열지 않는다.
+        if field.type == "text" and field.pattern is None and "staff" not in (audience, field.audience):
+            raise HubError(f"{where} 항목 '{field.id}': 방문자가 쓰는 글자 항목에는 pattern이 필요합니다 "
+                           "(운영자만 쓰는 항목이면 audience = \"staff\")")
+    return Mode(mid, _need(table, "label", str, where), audience,
                 _typed(table, "sheets", bool, where, True), tuple(args), fields)
 
 
@@ -187,10 +220,12 @@ def _read_toml(path):
         return tomllib.loads(path.read_text(encoding="utf-8"))
     except (tomllib.TOMLDecodeError, UnicodeDecodeError) as e:
         raise HubError(f"TOML 문법 오류 ({e})") from None
+    except OSError as e:
+        raise HubError(f"파일을 읽을 수 없습니다 ({e})") from None
 
 
 def _parse_content(path, group):
-    table = _read_toml(path)
+    table = _table(_read_toml(path), CONTENT_KEYS, "")
     folder = path.parent
     script = folder / _typed(table, "script", str, "", f"{folder.name}.py")
     if not script.is_file():
@@ -239,7 +274,7 @@ def load(root: Path = ROOT) -> Catalog:
         elif (folder / "group.toml").is_file():
             shown = (folder / "group.toml").relative_to(root).as_posix()
             try:
-                table = _read_toml(folder / "group.toml")
+                table = _table(_read_toml(folder / "group.toml"), GROUP_KEYS, "")
                 groups[folder.name] = Group(folder.name, _need(table, "title", str, ""),
                                             _typed(table, "order", int, "", 100))
             except HubError as e:
@@ -269,7 +304,7 @@ def _visible(item, role):
 def _mode(content, mode_id, role):
     mode = next((m for m in content.modes if m.id == mode_id), None)
     if mode is None or not _visible(mode, role):
-        raise HubError(f"'{content.title}'에 없는 메뉴입니다.")
+        raise HubError(f"'{content.title}'에 없는 메뉴예요.")
     return mode
 
 
@@ -278,11 +313,11 @@ def _clean_text(value, label, max_length):
         raise HubError(f"{label}: 글자로 입력해 주세요.")
     value = value.strip()
     if CONTROL.search(value):
-        raise HubError(f"{label}: 쓸 수 없는 글자가 들어 있습니다.")
+        raise HubError(f"{label}: 쓸 수 없는 글자가 들어 있어요.")
     if value.startswith("-"):
-        raise HubError(f"{label}: '-'로 시작할 수 없습니다.")
+        raise HubError(f"{label}: '-'로 시작할 수 없어요.")
     if len(value) > max_length:
-        raise HubError(f"{label}: {max_length}자까지 입력할 수 있습니다.")
+        raise HubError(f"{label}: {max_length}자까지 입력할 수 있어요.")
     return value
 
 
@@ -292,7 +327,7 @@ def _value(field, raw, role, nicknames):
     if field.type == "choice":
         value = field.default if raw is None else raw
         if value not in [v for _, v in field.choices]:
-            raise HubError(f"{label}: 고를 수 없는 값입니다.")
+            raise HubError(f"{label}: 고를 수 없는 값이에요.")
         return value or None
 
     if field.type == "number":
@@ -305,7 +340,7 @@ def _value(field, raw, role, nicknames):
         if isinstance(raw, bool) or not isinstance(raw, int):
             raise HubError(f"{label}: 숫자를 입력해 주세요.")
         if not field.min <= raw <= field.max:
-            raise HubError(f"{label}: {field.min}~{field.max} 사이여야 합니다.")
+            raise HubError(f"{label}: {field.min}~{field.max} 사이여야 해요.")
         return str(raw)
 
     if field.type == "text":
@@ -314,9 +349,9 @@ def _value(field, raw, role, nicknames):
             if field.required:
                 raise HubError(f"{label}: 입력해 주세요.")
             return None
-        if field.pattern and not re.fullmatch(field.pattern, value):
+        if field.pattern and not re.fullmatch(field.pattern, value, re.ASCII):  # \d 는 0-9 만
             hint = f" (예: {field.example})" if field.example else ""
-            raise HubError(f"{label}: 형식이 맞지 않습니다{hint}.")
+            raise HubError(f"{label}: 형식이 맞지 않아요{hint}.")
         return value
 
     # names
@@ -326,11 +361,11 @@ def _value(field, raw, role, nicknames):
     if not field.min <= len(names) <= field.max:
         raise HubError(f"{label}: {field.min}~{field.max}개를 골라 주세요.")
     if any(not n or "," in n for n in names):
-        raise HubError(f"{label}: 빈 이름이나 쉼표가 든 이름은 쓸 수 없습니다.")
+        raise HubError(f"{label}: 빈 이름이나 쉼표가 든 이름은 쓸 수 없어요.")
     if len(set(names)) != len(names):
-        raise HubError(f"{label}: 같은 이름이 두 번 들어 있습니다.")
+        raise HubError(f"{label}: 같은 이름이 두 번 들어 있어요.")
     if role != STAFF and any(n not in nicknames for n in names):
-        raise HubError(f"{label}: 목록에 있는 이름만 고를 수 있습니다.")
+        raise HubError(f"{label}: 목록에 있는 이름만 고를 수 있어요.")
     return ",".join(names)
 
 
@@ -339,17 +374,20 @@ def build_args(content: Content, mode_id: str, values: dict, role: str,
     """입력값을 검사해 스크립트에 넘길 인자 목록을 만든다. 잘못된 값이면 HubError."""
     mode = _mode(content, mode_id, role)
     if not isinstance(values, dict):
-        raise HubError("입력값이 올바르지 않습니다.")
+        raise HubError("입력값이 올바르지 않아요.")
     known = {f.id: f for f in mode.fields}
     for key in values:
         if key not in known or not _visible(known[key], role):
-            raise HubError("입력할 수 없는 항목이 들어 있습니다.")
+            raise HubError("입력할 수 없는 항목이 들어 있어요.")
 
     positional, options = [], []
     for field in mode.fields:
         if not _visible(field, role):
             continue  # 방문자에게 운영자 전용 항목은 없는 것과 같다 (기본값도 붙이지 않는다)
-        value = _value(field, values.get(field.id), role, nicknames)
+        try:
+            value = _value(field, values.get(field.id), role, nicknames)
+        except HubError as e:
+            raise HubError(str(e), field.id) from None
         if value is None:
             continue
         if field.arg:
@@ -365,7 +403,7 @@ def check_sheets(mode: Mode, sheets, role: str) -> int:
         return 1
     limit = MAX_SHEETS[role]
     if isinstance(sheets, bool) or not isinstance(sheets, int) or not 1 <= sheets <= limit:
-        raise HubError(f"한 번에 1~{limit}장까지 뽑을 수 있습니다.")
+        raise HubError(f"한 번에 1~{limit}장까지 뽑을 수 있어요.")
     return sheets
 
 
