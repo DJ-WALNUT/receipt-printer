@@ -1,10 +1,10 @@
 """maishift(maimai.shiftpsh.com) 프로필을 읽어 '레이팅 영수증'으로 인쇄한다.
 
 사용법 (프로젝트 폴더에서):
-    python maimai/maimai.py gupying              # 아이디로 한 장 인쇄
-    python maimai/maimai.py gupying --top 10     # 신곡·구곡을 각각 10곡씩 (기본 3곡)
-    python maimai/maimai.py gupying --all        # 레이팅 대상곡 전부 (길다)
-    python maimai/maimai.py gupying --preview    # 인쇄 없이 이미지만 저장
+    python maimai/maimai.py walnut              # 아이디로 한 장 인쇄
+    python maimai/maimai.py walnut --top 10     # 신곡·구곡을 각각 10곡씩 (기본 3곡)
+    python maimai/maimai.py walnut --all        # 레이팅 대상곡 전부 (길다)
+    python maimai/maimai.py walnut --preview    # 인쇄 없이 이미지만 저장
 
 아이디 자리에 프로필 주소를 통째로 붙여 넣어도 된다.
 아이디가 없거나 비공개면 오류 메시지만 내고 인쇄하지 않는다. 이미지는 maimai/output/ 에 저장된다.
