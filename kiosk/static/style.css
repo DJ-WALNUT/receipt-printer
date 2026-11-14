@@ -23,7 +23,7 @@
   --line: 3px;                 /* 판의 테두리 굵기 */
   --panel-width: 23.25rem;     /* 오른쪽 패널의 가로. 패널을 넓히려면 여기를 바꾼다 (.panel 에 min-width 를 주면 칸 밖으로 넘쳐 잘린다) */
   --tab-min: 10rem;            /* 묶음 탭 하나의 최소 가로. 다 안 들어가면 좌우로 밀어서 본다 */
-  --tile-min: 219px;           /* 판에서 칸 하나의 최소 가로. 이 값이 들어가는 만큼 열이 생긴다 */
+  --tile-min: 250px;           /* 판에서 칸 하나의 최소 가로. 이 값이 들어가는 만큼 열이 생긴다 */
   --torn-ink: #4d3c00;         /* 뜯긴 칸 위의 글자 */
   --hint: #5c5c5c;             /* 흰 바탕 위의 보조 글자 */
   --danger: #b00020;
@@ -134,12 +134,23 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 
 /* ------------------------------------------------------------ 판 */
 
+/* 판 영역도 패널처럼 층을 나눈다: 묶음 탭(고정) / 칸 격자(길면 여기만 스크롤). */
 .board {
   min-width: 0;
   min-height: 0;
-  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.5rem 0;
+  overflow: hidden;
+}
+.tabs { flex: none; }
+.board__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: 1.5rem;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* 묶음 탭: 판 너비를 똑같이 나눠 가진 큰 버튼. 무엇이 있는지 한눈에 보이고 누르기 쉽다. */
