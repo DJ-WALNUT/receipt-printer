@@ -36,7 +36,10 @@ def main():
                      secret=os.environ.get("KIOSK_SECRET") or None)
     if os.environ.get("KIOSK_KEEP_DAYS"):
         keep_clean(float(os.environ["KIOSK_KEEP_DAYS"]))
-    logging.getLogger("kiosk").info("키오스크 시작: 포트 %d%s", port, " (미리보기 모드, 인쇄 안 함)" if preview else "")
+    logging.getLogger("waitress").setLevel(logging.WARNING)   # "Serving on http://0.0.0.0:..." 는 눌러도 열리지 않는 주소라 숨긴다
+    shown = "http://localhost" + ("" if port == 80 else f":{port}")
+    logging.getLogger("kiosk").info("키오스크 시작%s. 이 컴퓨터에서는 %s 로 엽니다.",
+                                    " (미리보기 모드, 인쇄 안 함)" if preview else "", shown)
     serve(app, host="0.0.0.0", port=port, threads=8)
 
 
