@@ -9,7 +9,7 @@ DEFAULT_COLORS = {
     "select": "#1E3A8A", "ink": "#1A1A1A", "paper": "#FFFFFF",
 }
 DEFAULT_FONTS = {
-    "display": "'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
+    "display": "'DNF Bit Bit v2', 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
     "body": "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif",
 }
 COLOR = re.compile(r"#[0-9a-fA-F]{6}")

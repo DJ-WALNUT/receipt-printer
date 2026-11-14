@@ -13,27 +13,27 @@ colors:
   danger: "#b00020"
 typography:
   display:
-    fontFamily: "'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "3.25rem"
     fontWeight: 400
     lineHeight: 1.05
   action:
-    fontFamily: "'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "2.75rem"
     fontWeight: 400
     lineHeight: 1
   headline:
-    fontFamily: "'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "2.625rem"
     fontWeight: 400
     lineHeight: 1
   title:
-    fontFamily: "'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "2.25rem"
     fontWeight: 400
     lineHeight: 1.1
   numeral:
-    fontFamily: "'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "1.875rem"
     fontWeight: 400
     lineHeight: 1
@@ -217,7 +217,7 @@ components:
 - 떠 있는 카드가 아니라, 절취선으로 맞붙은 한 장의 판.
 - 원색 네 가지(노랑, 빨강, 남색, 먹)와 흰색. 색마다 맡은 일이 하나씩이다.
 - 3px 먹색 테두리. 실선은 가장자리, 점선은 뜯는 자리.
-- 통통한 주아체는 이름, 번호, 뽑기 버튼에만. 나머지는 시스템 고딕.
+- 도톰한 픽셀 글꼴인 던파 비트비트체는 이름, 번호, 뽑기 버튼에만. 나머지는 시스템 고딕.
 - 그림자 없음. 호버 없음. 움직임은 뜯기는 순간 하나.
 
 ## Colors
@@ -252,17 +252,17 @@ components:
 
 ## Typography
 
-**Display Font:** Jua (대체: Apple SD Gothic Neo, Malgun Gothic, sans-serif). `kiosk/static/fonts/Jua-Regular.ttf`를 직접 내려준다.
+**Display Font:** DNF Bit Bit v2 (대체: Apple SD Gothic Neo, Malgun Gothic, sans-serif). `kiosk/static/fonts/DNFBitBitv2.ttf`를 직접 내려준다.
 **Body Font:** Apple SD Gothic Neo (대체: Malgun Gothic, Noto Sans KR, sans-serif). 기기에 있는 고딕을 쓴다.
 
-**Character:** 통통하고 둥근 주아체가 간판과 번호를 맡고, 굵은 시스템 고딕이 나머지 전부를 맡는다. 주아체는 굵기가 하나(400)뿐이며, 고딕은 700이 기본이고 400은 설명글에만 쓴다.
+**Character:** 통통하고 둥근 던파 비트비트체가 간판과 번호를 맡고, 굵은 시스템 고딕이 나머지 전부를 맡는다. 던파 비트비트체는 굵기가 하나(400)뿐이며, 고딕은 700이 기본이고 400은 설명글에만 쓴다.
 
 ### Hierarchy
-- **Display** (Jua 400, 3.25rem, 1.05): 뽑는 중과 다 나왔을 때 패널의 큰 말.
-- **Action** (Jua 400, 2.75rem, 1): 뽑기 버튼의 글자.
-- **Headline** (Jua 400, 2.625rem, 1): 머리띠의 키오스크 이름.
-- **Title** (Jua 400, 2.25rem, 1.1): 패널 제목. 덮개 상자의 제목은 2rem.
-- **Numeral** (Jua 400, 1.875rem, 1, tabular-nums): 칸 번호. 안내 순서의 번호는 1.75rem, 종이 조각의 번호는 1.5rem.
+- **Display** (DNF Bit Bit v2 400, 3.25rem, 1.05): 뽑는 중과 다 나왔을 때 패널의 큰 말.
+- **Action** (DNF Bit Bit v2 400, 2.75rem, 1): 뽑기 버튼의 글자.
+- **Headline** (DNF Bit Bit v2 400, 2.625rem, 1): 머리띠의 키오스크 이름.
+- **Title** (DNF Bit Bit v2 400, 2.25rem, 1.1): 패널 제목. 덮개 상자의 제목은 2rem.
+- **Numeral** (DNF Bit Bit v2 400, 1.875rem, 1, tabular-nums): 칸 번호. 안내 순서의 번호는 1.75rem, 종이 조각의 번호는 1.5rem.
 - **Cell** (고딕 700, 1.3125rem, 1.2): 칸의 콘텐츠 이름. 아래 띠의 글자도 같은 크기다.
 - **Control** (고딕 700, 1.25rem, 1.15): 탭, 옵션 버튼, 안내 순서. 입력칸은 1.375rem, 숫자 값은 1.5rem, 비밀번호 키는 1.75rem.
 - **Body** (고딕 400, 1.1875rem, 1.45): 패널의 설명글.
@@ -270,7 +270,7 @@ components:
 - **Hint** (고딕 400, 1rem, 1.3): 입력칸 아래 도움말. 가장 작은 글자다.
 
 ### Named Rules
-**주아체는 간판과 번호 규칙.** 주아체는 키오스크 이름, 제목, 번호, 뽑기 버튼에만 쓴다. 옵션, 설명, 알림은 고딕이다.
+**던파 비트비트체는 간판과 번호 규칙.** 던파 비트비트체는 키오스크 이름, 제목, 번호, 뽑기 버튼에만 쓴다. 옵션, 설명, 알림은 고딕이다.
 
 **단어에서 끊지 않기 규칙.** 줄이 바뀌는 한국어 글자는 `word-break: keep-all`로 어절 단위로만 끊는다.
 
@@ -314,7 +314,7 @@ components:
 모든 누르는 것은 흰 바탕에 3px 먹색 테두리에서 시작하고, 눌린 순간 줄무늬 노랑(`board-shade`)이 된다. 호버 상태는 없다. 포커스는 3px 남색 외곽선을 2px 띄워 그린다.
 
 ### Buttons
-- **뽑기 버튼:** 패널 바닥의 빨간 버튼. 너비 전부, 최소 높이 5.75rem, 4px 먹색 테두리, 모서리 1rem, 주아체 2.75rem 흰 글자. 눌린 순간 먹색이 된다. 못 누를 때는 흰 바탕에 회색 글자와 점선 테두리가 되고, 왜 못 누르는지를 버튼 위에 가운데 정렬 글(1.0625rem, 400)로 적는다. 화면에 하나뿐이다.
+- **뽑기 버튼:** 패널 바닥의 빨간 버튼. 너비 전부, 최소 높이 5.75rem, 4px 먹색 테두리, 모서리 1rem, 던파 비트비트체 2.75rem 흰 글자. 눌린 순간 먹색이 된다. 못 누를 때는 흰 바탕에 회색 글자와 점선 테두리가 되고, 왜 못 누르는지를 버튼 위에 가운데 정렬 글(1.0625rem, 400)로 적는다. 화면에 하나뿐이다.
 - **보통 버튼:** 흰 바탕, 3px 테두리, 모서리 0.75rem, 최소 높이 3.5rem, 1.1875rem. 그만두기, 처음으로 같은 두 번째 행동. 못 누를 때는 회색 점선. 위험한 행동은 테두리와 글자가 경고 빨강이고 눌린 순간 경고 빨강 바탕에 흰 글자.
 - **머리띠 버튼:** 빨간 띠 위의 흰 테두리 알약(최소 높이 2.75rem). 눌린 순간 흰 바탕에 빨간 글자로 뒤집힌다. 관리자일 때만 보인다.
 - **비밀번호 키:** 3열, 최소 높이 4.25rem, 1.75rem 숫자. 눌린 순간 판 노랑. 확인 키만 빨간 바탕에 흰 글자.
@@ -337,11 +337,11 @@ components:
 - **비밀번호 점:** 1.125rem 동그라미, 3px 테두리, 채워지면 먹.
 
 ### Navigation
-- **머리띠:** 빨간 바탕, 아래 6px 먹선. 왼쪽에 주아체 이름, 오른쪽에 알약들. 이름을 길게 누르면 관리자 비밀번호가 열린다.
+- **머리띠:** 빨간 바탕, 아래 6px 먹선. 왼쪽에 던파 비트비트체 이름, 오른쪽에 알약들. 이름을 길게 누르면 관리자 비밀번호가 열린다.
 - **아래 띠:** 먹 바탕에 흰 글자(1.3125rem, 400). 지금 프린터가 하는 일을 한 줄로 말한다. 앞에 붙는 상태 말은 굵은 노랑.
 
 ### 뽑기판 (Signature)
-3열 격자. 흰 칸마다 왼쪽에 빨간 주아체 번호, 오른쪽에 굵은 고딕 이름. 칸 사이는 3px 점선, 판 가장자리는 3px 실선이다.
+3열 격자. 흰 칸마다 왼쪽에 빨간 던파 비트비트체 번호, 오른쪽에 굵은 고딕 이름. 칸 사이는 3px 점선, 판 가장자리는 3px 실선이다.
 - **눌린 순간:** 줄무늬 노랑 바탕.
 - **고른 칸:** 남색 바탕에 흰 글자, 번호는 노랑.
 - **뜯긴 칸:** 뽑는 중인 칸. 판 노랑과 줄무늬 노랑의 135도 줄무늬가 드러나고 글자와 번호는 `torn-ink`. 고른 상태보다 우선한다.
@@ -351,7 +351,7 @@ components:
 뽑는 중 패널에 장 수만큼 늘어서는 3.5rem x 4.5rem 직각 조각(여덟 장이 넘으면 2.5rem x 3.25rem). 아직 안 나온 장은 점선 테두리에 회색 번호, 지금 나오는 장은 실선에 판 노랑, 다 나온 장은 실선에 남색 바탕과 흰 체크 선 그림. 바탕색은 0.18s에 걸쳐 바뀐다.
 
 ### 안내 순서와 목록
-첫 화면 패널의 순서 안내는 주아체 번호(1.75rem)와 1.25rem 굵은 글, 줄 위에 3px 점선. 대기열 목록은 위에 실선 하나, 줄마다 아래 점선, 상태(6.5rem 고정 너비), 내용(400), 장 수(tabular-nums) 순서다.
+첫 화면 패널의 순서 안내는 던파 비트비트체 번호(1.75rem)와 1.25rem 굵은 글, 줄 위에 3px 점선. 대기열 목록은 위에 실선 하나, 줄마다 아래 점선, 상태(6.5rem 고정 너비), 내용(400), 장 수(tabular-nums) 순서다.
 
 `prefers-reduced-motion`에서는 모든 전환과 뜯기는 연출을 끈다.
 
@@ -372,7 +372,7 @@ components:
 - **Don't** 판의 칸을 서로 떨어진 카드로 만들지 않는다. 칸은 절취선으로 맞붙는다.
 - **Don't** 뽑기 빨강을 고른 상태나 꾸밈에 쓰지 않는다. 화면의 빨간 버튼은 뽑기 하나다.
 - **Don't** 뽑기 빨강(`accent`)과 경고 빨강(`danger`)을 섞어 쓰지 않는다.
-- **Don't** 주아체를 옵션, 설명, 알림에 쓰지 않는다.
+- **Don't** 던파 비트비트체를 옵션, 설명, 알림에 쓰지 않는다.
 - **Don't** 호버에 기대지 않는다. 터치 전용이다.
 - **Don't** `clamp()`, `:has()`, flex `gap`, `inset`, `aspect-ratio`를 쓰지 않는다.
 - **Don't** 1rem보다 작은 글자나 2.75rem보다 낮은 누르는 대상을 만들지 않는다.

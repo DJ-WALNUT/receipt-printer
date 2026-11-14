@@ -6,6 +6,11 @@
   src: url('/static/fonts/Jua-Regular.ttf') format('truetype');
   font-display: swap;
 }
+@font-face {
+  font-family: 'DNF Bit Bit v2';
+  src: url('/static/fonts/DNFBitBitv2.ttf') format('truetype');
+  font-display: swap;
+}
 
 :root {
   --line: 3px;                 /* 판의 테두리 굵기 */
