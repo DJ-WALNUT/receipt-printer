@@ -92,7 +92,14 @@ def get_font(style):
 
 # 글자가 없을 때 대신 쓰는 폰트. Galmuri11 보통 굵기가 글자가 가장 많다 (일본어 가나·한자 포함).
 # Bold에는 일본어가 없어서, 굵은 줄에 일본어가 섞이면 그 글자만 보통 굵기로 나온다.
-FALLBACKS = [(FONT_DIR / "Galmuri11.ttf", 12), (Path("C:/Windows/Fonts/msgothic.ttc"), 12)]
+# 없는 파일은 건너뛴다. MS Gothic은 Windows, Unifont는 라즈베리파이(apt install fonts-unifont)용이다.
+# Unifont는 16픽셀 비트맵 글꼴이라 정수 배로 키워도 점이 깨끗하다.
+FALLBACKS = [
+    (FONT_DIR / "Galmuri11.ttf", 12),
+    (Path("C:/Windows/Fonts/msgothic.ttc"), 12),
+    (Path("/usr/share/fonts/opentype/unifont/unifont.otf"), 16),
+    (Path("/usr/share/fonts/truetype/unifont/unifont.ttf"), 16),
+]
 _fallback_fonts = None
 _glyph_cache = {}
 
