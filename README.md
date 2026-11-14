@@ -7,7 +7,7 @@ CPP-3000 (80mm 감열, 203dpi, 가로 576도트). USB 가상 시리얼 `COM17`�
 
 ## 폴더 구조
 
-메뉴와 같은 모양이다. 고전게임은 `games/`, 오늘의 운세는 `fortune/` 아래에 콘텐츠마다 폴더 하나씩 있고, 폴더 이름과 같은 스크립트(`games/sudoku/sudoku.py`), 설정 파일(`content.toml`), 그 스크립트가 만든 이미지(`output/`)가 함께 들어간다.
+메뉴와 같은 모양이다. 고전게임은 `games/`, 오늘의 운세는 `fortune/`, 리듬게임은 `rhythm/` 아래에 콘텐츠마다 폴더 하나씩 있고, 폴더 이름과 같은 스크립트(`games/sudoku/sudoku.py`), 설정 파일(`content.toml`), 그 스크립트가 만든 이미지(`output/`)가 함께 들어간다.
 
 ```
 main.py              터미널 메뉴 (콘텐츠 골라 실행)
@@ -36,7 +36,9 @@ fortune/             오늘의 운세
   lotto/             나름로또 (나름청소년활동센터 체험용 복권)
   tarot/             오늘의 타로 (도트 카드 그림 + 운세)
 
-maimai/              maimai 레이팅 영수증 (maishift 프로필)
+rhythm/              리듬게임
+  maimai/            maimai 레이팅 영수증 (maishift 프로필)
+  sdvx/              (준비 중)
 
 Galmuri-v2.40.4/     폰트
 docs/                작업 정리 문서
@@ -87,7 +89,7 @@ python -m venv .venv
 .venv\Scripts\python main.py text text/examples/sample.txt --preview
 ```
 
-메뉴는 텍스트 인쇄, 고전게임(스도쿠·부등호 스도쿠·노노그램·지뢰찾기·미로찾기·낱말 찾기·다른 그림 찾기·오목판·점과 상자·틱택토·빙고·사다리 타기·행맨), 오늘의 운세(전리품 뽑기·나름로또·오늘의 타로), maimai 순서다. 묶음에 들어가면 `b`로 돌아온다.
+메뉴는 텍스트 인쇄, 고전게임(스도쿠·부등호 스도쿠·노노그램·지뢰찾기·미로찾기·낱말 찾기·다른 그림 찾기·오목판·점과 상자·틱택토·빙고·사다리 타기·행맨), 오늘의 운세(전리품 뽑기·나름로또·오늘의 타로), 리듬게임(maimai 레이팅) 순서다. 묶음에 들어가면 `b`로 돌아온다.
 
 - `p`를 누르면 인쇄 모드와 미리보기 모드(종이 안 씀)가 바뀐다.
 - 콘텐츠를 고르면 옵션 다음에 몇 장 뽑을지 묻는다 (Enter = 1장, 최대 20장). 퍼즐과 뽑기는 장마다 다른 판이 나온다. 정답 인쇄처럼 한 장만 뽑는 메뉴에서는 묻지 않는다.
@@ -141,7 +143,7 @@ default = "medium"
 - 항목에도 `audience = "staff"`를 붙일 수 있다. 방문자에게는 그 항목이 없는 것처럼 동작한다.
 - 방문자가 글자를 직접 넣는 `text` 항목에는 반드시 `pattern`을 준다. 넣은 글자가 영수증에 찍히기 때문이다. `pattern`이 없으면 허브가 그 콘텐츠를 오류로 뺀다 (운영자만 쓰는 항목은 `audience = "staff"`).
 - 표에 없는 키를 쓰면 오타로 보고 그 콘텐츠를 오류로 뺀다. `audience`를 잘못 적어 운영자 전용 메뉴가 방문자에게 열리는 일을 막기 위해서다.
-- 묶음(`games/`, `fortune/`)의 제목과 순서는 그 폴더의 `group.toml`에 있다. 새 묶음은 폴더와 `group.toml`을 만들면 된다.
+- 묶음(`games/`, `fortune/`, `rhythm/`)의 제목과 순서는 그 폴더의 `group.toml`에 있다. 새 묶음은 폴더와 `group.toml`을 만들면 된다.
 
 ### 시드번호
 
@@ -331,10 +333,10 @@ default = "medium"
 [maishift](https://maimai.shiftpsh.com) 프로필을 읽어 레이팅 대상곡을 "구매 내역"처럼 찍는다. 한 번 실행에 사이트 요청은 한 번.
 
 ```powershell
-.venv\Scripts\python maimai/maimai.py gupying             # 아이디로 한 장 (신곡·구곡 상위 3곡씩, 약 20cm)
-.venv\Scripts\python maimai/maimai.py gupying --top 10    # 10곡씩
-.venv\Scripts\python maimai/maimai.py gupying --all       # 레이팅 대상곡 전부 (아주 길다)
-.venv\Scripts\python maimai/maimai.py gupying --preview   # 종이 없이 이미지만 저장
+.venv\Scripts\python rhythm/maimai/maimai.py gupying             # 아이디로 한 장 (신곡·구곡 상위 3곡씩, 약 20cm)
+.venv\Scripts\python rhythm/maimai/maimai.py gupying --top 10    # 10곡씩
+.venv\Scripts\python rhythm/maimai/maimai.py gupying --all       # 레이팅 대상곡 전부 (아주 길다)
+.venv\Scripts\python rhythm/maimai/maimai.py gupying --preview   # 종이 없이 이미지만 저장
 ```
 
 아이디가 없거나 비공개면 오류 메시지만 내고 인쇄하지 않는다. 사이트 구조가 바뀌면 `maimai.py`의 `extract_loader`를 고쳐야 한다.
