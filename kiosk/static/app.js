@@ -216,8 +216,8 @@
   }
 
   function renderTabs() {
+    var scrolled = dom.tabs.scrollLeft;   // 다시 그려도 좌우로 민 자리를 지킨다
     clear(dom.tabs);
-    dom.tabs.className = 'tabs tabs--' + Math.min(4, Math.max(1, state.tabs.length));
     state.tabs.forEach(function (tab, index) {
       var node = button('tab', tab.title, function () { selectTab(index); });
       node.setAttribute('role', 'tab');
@@ -225,6 +225,7 @@
       if (tab.items.length > 1) { node.appendChild(el('span', 'tab__count', String(tab.items.length))); }
       dom.tabs.appendChild(node);
     });
+    dom.tabs.scrollLeft = scrolled;
   }
 
   function renderGrid() {
