@@ -901,6 +901,23 @@
     else if (state.offline) { refreshCatalog(); }
   }, 60 * 1000);
 
+  /* 홈 화면에 추가한 아이패드(전체 화면)에서는 브라우저가 화면 높이를 실제보다 짧게 알려줘서
+     아래에 틈이 남는다. 이때는 기기 화면 크기를 직접 읽어 틀의 높이를 맞춘다.
+     보통 브라우저 탭에서는 아무것도 하지 않는다. */
+  function fitFullScreen() {
+    if (window.navigator.standalone !== true) { return; }
+    var app = document.querySelector('.app');
+    var screenSize = window.screen;
+    var landscape = window.innerWidth > window.innerHeight;
+    var height = landscape ? Math.min(screenSize.width, screenSize.height) : Math.max(screenSize.width, screenSize.height);
+    if (!height || height < window.innerHeight) { return; }   // 값이 이상하면 CSS에 맡긴다
+    app.style.bottom = 'auto';
+    app.style.height = height + 'px';
+  }
+  fitFullScreen();
+  window.addEventListener('resize', fitFullScreen);
+  window.addEventListener('orientationchange', function () { setTimeout(fitFullScreen, 300); });
+
   renderAll();
   loadCatalog();
 })();
