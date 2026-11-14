@@ -1,0 +1,26 @@
+title = "부등호 스도쿠"
+order = 20
+seed_prefix = "F"
+
+[[mode]]
+id = "new"
+label = "새 판"
+[[mode.field]]
+id = "level"
+type = "choice"
+label = "난이도"
+arg = "--level"
+choices = [["쉬움 4x4", "easy"], ["보통 5x5", "medium"], ["어려움 6x6", "hard"]]
+default = "medium"
+
+[[mode]]
+id = "answer"
+label = "정답 인쇄"
+sheets = false
+[[mode.field]]
+id = "number"
+type = "text"
+label = "시드번호"
+arg = "--answer"
+pattern = '[Ff][EMHemh]\d{6}'
+example = "FM482913"

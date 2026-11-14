@@ -1,0 +1,48 @@
+title = "빙고"
+order = 110
+
+[[mode]]
+id = "new"
+label = "숫자 판"
+[[mode.field]]
+id = "size"
+type = "number"
+label = "한 변 칸 수"
+arg = "--size"
+min = 3
+max = 7
+default = 5
+[[mode.field]]
+id = "max"
+type = "number"
+label = "가장 큰 숫자"
+arg = "--max"
+min = 9
+max = 99
+
+[[mode]]
+id = "blank"
+label = "빈 판"
+audience = "staff"
+args = ["--blank"]
+[[mode.field]]
+id = "size"
+type = "number"
+label = "한 변 칸 수"
+arg = "--size"
+min = 3
+max = 7
+default = 5
+
+[[mode]]
+id = "caller"
+label = "진행자용 부를 순서"
+audience = "staff"
+args = ["--caller"]
+[[mode.field]]
+id = "max"
+type = "number"
+label = "가장 큰 숫자"
+arg = "--max"
+min = 9
+max = 99

@@ -1,0 +1,27 @@
+title = "다른 그림 찾기"
+order = 70
+seed_prefix = "D"
+
+[[mode]]
+id = "new"
+label = "새 판"
+[[mode.field]]
+id = "count"
+type = "number"
+label = "다른 곳 개수"
+arg = "--count"
+min = 3
+max = 8
+default = 5
+
+[[mode]]
+id = "answer"
+label = "정답 인쇄"
+sheets = false
+[[mode.field]]
+id = "number"
+type = "text"
+label = "시드번호"
+arg = "--answer"
+pattern = '[Dd][3-8]\d{6}'
+example = "D5482913"

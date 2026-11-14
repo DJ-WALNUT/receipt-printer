@@ -1,0 +1,21 @@
+title = "행맨"
+order = 130
+
+[[mode]]
+id = "new"
+label = "행맨"
+[[mode.field]]
+id = "lang"
+type = "choice"
+label = "글자"
+arg = "--lang"
+choices = [["한글 (자음·모음)", "ko"], ["영어 (알파벳)", "en"]]
+default = "ko"
+[[mode.field]]
+id = "slots"
+type = "number"
+label = "글자 칸 개수"
+arg = "--slots"
+min = 4
+max = 20
+default = 10

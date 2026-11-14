@@ -1,0 +1,19 @@
+title = "틱택토"
+order = 100
+
+[[mode]]
+id = "new"
+label = "3x3 판"
+[[mode.field]]
+id = "boards"
+type = "number"
+label = "판 개수"
+arg = "--boards"
+min = 2
+max = 12
+default = 6
+
+[[mode]]
+id = "super"
+label = "슈퍼 틱택토"
+args = ["--super"]

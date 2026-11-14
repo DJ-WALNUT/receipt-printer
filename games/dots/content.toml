@@ -1,0 +1,21 @@
+title = "점과 상자"
+order = 90
+
+[[mode]]
+id = "new"
+label = "점과 상자"
+[[mode.field]]
+id = "size"
+type = "number"
+label = "가로 점 수"
+arg = "--size"
+min = 4
+max = 12
+default = 8
+[[mode.field]]
+id = "rows"
+type = "number"
+label = "세로 점 수"
+arg = "--rows"
+min = 4
+max = 30

@@ -1,0 +1,4 @@
+title = "텍스트 인쇄"
+order = 10
+kiosk = false   # 터미널에서만 쓴다. 무엇을 찍을지는 main.py 의 ask_text 가 묻는다.
+script = "print_text.py"

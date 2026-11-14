@@ -1,0 +1,75 @@
+title = "사다리 타기"
+order = 120
+
+[[mode]]
+id = "new"
+label = "사다리 타기"
+sheets = false
+[[mode.field]]
+id = "names"
+type = "names"
+label = "참가자"
+arg = "--names"
+min = 2
+max = 8
+[[mode.field]]
+id = "wins"
+type = "number"
+label = "당첨 개수"
+arg = "--wins"
+min = 1
+max = 7
+default = 1
+
+[[mode]]
+id = "numbers"
+label = "번호만"
+audience = "staff"
+[[mode.field]]
+id = "players"
+type = "number"
+label = "인원"
+arg = "--players"
+min = 2
+max = 8
+default = 4
+[[mode.field]]
+id = "wins"
+type = "number"
+label = "당첨 개수"
+arg = "--wins"
+min = 1
+max = 7
+default = 1
+
+[[mode]]
+id = "results"
+label = "결과 직접 입력"
+audience = "staff"
+[[mode.field]]
+id = "names"
+type = "names"
+label = "참가자"
+arg = "--names"
+min = 2
+max = 8
+[[mode.field]]
+id = "results"
+type = "text"
+label = "결과 (쉼표로 구분, 모자라면 나머지는 통과)"
+arg = "--results"
+max_length = 100
+example = "설거지,청소"
+
+[[mode]]
+id = "blank"
+label = "빈 결과 칸"
+audience = "staff"
+args = ["--blank"]
+[[mode.field]]
+id = "names"
+type = "names"
+label = "참가자"
+arg = "--names"
+min = 2
+max = 8

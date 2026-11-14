@@ -1,0 +1,72 @@
+title = "낱말 찾기"
+order = 60
+seed_prefix = "W"
+
+[[mode]]
+id = "new"
+label = "새 판"
+[[mode.field]]
+id = "level"
+type = "choice"
+label = "난이도"
+arg = "--level"
+choices = [["쉬움", "easy"], ["보통", "medium"], ["어려움", "hard"]]
+default = "medium"
+[[mode.field]]
+id = "theme"
+type = "choice"
+label = "주제"
+arg = "--theme"
+choices = [["무작위", ""], ["동물", "animal"], ["음식", "food"], ["과일", "fruit"], ["학교", "school"], ["우주", "space"]]
+default = ""
+
+[[mode]]
+id = "custom"
+label = "낱말 직접 넣기"
+audience = "staff"
+[[mode.field]]
+id = "level"
+type = "choice"
+label = "난이도"
+arg = "--level"
+choices = [["쉬움", "easy"], ["보통", "medium"], ["어려움", "hard"]]
+default = "medium"
+[[mode.field]]
+id = "words"
+type = "text"
+label = "낱말 (쉼표로 구분)"
+arg = "--words"
+max_length = 100
+example = "나름,청소년,광명"
+
+[[mode]]
+id = "answer"
+label = "정답 인쇄"
+sheets = false
+[[mode.field]]
+id = "number"
+type = "text"
+label = "시드번호"
+arg = "--answer"
+pattern = '[Ww][EMHemh][1-9]\d{6}'
+example = "WM3482913"
+
+[[mode]]
+id = "answer_custom"
+label = "직접 넣은 판 정답"
+audience = "staff"
+sheets = false
+[[mode.field]]
+id = "number"
+type = "text"
+label = "시드번호"
+arg = "--answer"
+pattern = '[Ww][EMHemh]0\d{6}'
+example = "WM0482913"
+[[mode.field]]
+id = "words"
+type = "text"
+label = "그 판에 넣었던 낱말 (쉼표로 구분)"
+arg = "--words"
+max_length = 100
+example = "나름,청소년,광명"

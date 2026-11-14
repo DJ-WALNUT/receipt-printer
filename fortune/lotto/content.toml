@@ -1,0 +1,39 @@
+title = "나름로또"
+order = 20
+
+[[mode]]
+id = "new"
+label = "복권"
+[[mode.field]]
+id = "games"
+type = "number"
+label = "게임 수"
+arg = "--games"
+min = 1
+max = 5
+default = 5
+[[mode.field]]
+id = "prize"
+type = "text"
+label = "상품 칸에 찍을 글자"
+arg = "--prize"
+max_length = 20
+required = false
+audience = "staff"
+example = "문화상품권"
+[[mode.field]]
+id = "manual"
+type = "text"
+label = "수동 번호 한 게임"
+arg = "--manual"
+pattern = '\d{1,2}( \d{1,2}){5}'
+required = false
+audience = "staff"
+example = "3 11 17 24 38 42"
+
+[[mode]]
+id = "draw"
+label = "추첨 결과 용지"
+audience = "staff"
+sheets = false
+args = ["--draw"]

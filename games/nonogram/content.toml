@@ -1,0 +1,26 @@
+title = "노노그램"
+order = 30
+seed_prefix = "N"
+
+[[mode]]
+id = "new"
+label = "새 판"
+[[mode.field]]
+id = "level"
+type = "choice"
+label = "난이도"
+arg = "--level"
+choices = [["쉬움 10x10", "easy"], ["어려움 16x16", "hard"]]
+default = "easy"
+
+[[mode]]
+id = "answer"
+label = "정답 인쇄"
+sheets = false
+[[mode.field]]
+id = "number"
+type = "text"
+label = "시드번호"
+arg = "--answer"
+pattern = '[Nn][EHeh]\d{2}'
+example = "NE03"

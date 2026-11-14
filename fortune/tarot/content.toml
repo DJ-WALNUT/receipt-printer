@@ -1,0 +1,19 @@
+title = "오늘의 타로"
+order = 30
+seed_prefix = "T"
+
+[[mode]]
+id = "new"
+label = "한 장 뽑기"
+
+[[mode]]
+id = "again"
+label = "시드번호로 다시 뽑기"
+sheets = false
+[[mode.field]]
+id = "seed"
+type = "text"
+label = "시드번호"
+arg = "--seed"
+pattern = '[Tt]\d{6}'
+example = "T482913"

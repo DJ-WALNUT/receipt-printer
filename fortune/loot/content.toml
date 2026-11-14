@@ -1,0 +1,35 @@
+title = "전리품 뽑기 (TRPG)"
+order = 10
+seed_prefix = "L"
+
+[[mode]]
+id = "new"
+label = "한 장 뽑기"
+[[mode.field]]
+id = "level"
+type = "number"
+label = "아이템 레벨"
+arg = "--level"
+min = 1
+max = 30
+audience = "staff"
+
+[[mode]]
+id = "again"
+label = "시드번호로 다시 뽑기"
+sheets = false
+[[mode.field]]
+id = "seed"
+type = "text"
+label = "시드번호"
+arg = "--seed"
+pattern = '[Ll]\d{6}'
+example = "L482913"
+[[mode.field]]
+id = "level"
+type = "number"
+label = "아이템 레벨 (레벨을 정해 뽑았던 경우)"
+arg = "--level"
+min = 1
+max = 30
+audience = "staff"

@@ -1,0 +1,26 @@
+title = "스도쿠"
+order = 10
+seed_prefix = "S"
+
+[[mode]]
+id = "new"
+label = "새 판"
+[[mode.field]]
+id = "level"
+type = "choice"
+label = "난이도"
+arg = "--level"
+choices = [["쉬움", "easy"], ["보통", "medium"], ["어려움", "hard"]]
+default = "medium"
+
+[[mode]]
+id = "answer"
+label = "정답 인쇄"
+sheets = false
+[[mode.field]]
+id = "number"
+type = "text"
+label = "시드번호"
+arg = "--answer"
+pattern = '[Ss][EMHemh]\d{6}'
+example = "SM482913"

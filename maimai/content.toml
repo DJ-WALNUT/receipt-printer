@@ -1,0 +1,38 @@
+title = "maimai 레이팅 영수증"
+order = 40
+wait_between = 5   # maishift가 요청 간격 5초를 요구한다
+
+[[mode]]
+id = "new"
+label = "레이팅 영수증"
+sheets = false
+[[mode.field]]
+id = "handle"
+type = "text"
+label = "maishift 아이디"
+arg = ""
+pattern = '[A-Za-z0-9_.\-]{1,40}'
+max_length = 40
+example = "gupying"
+[[mode.field]]
+id = "top"
+type = "choice"
+label = "신곡·구곡 각각 몇 곡"
+arg = "--top"
+choices = [["3곡", "3"], ["5곡", "5"], ["10곡", "10"]]
+default = "3"
+
+[[mode]]
+id = "all"
+label = "전부 찍기 (아주 길다)"
+audience = "staff"
+sheets = false
+args = ["--all"]
+[[mode.field]]
+id = "handle"
+type = "text"
+label = "maishift 아이디"
+arg = ""
+pattern = '[A-Za-z0-9_.\-]{1,40}'
+max_length = 40
+example = "gupying"
