@@ -13,6 +13,7 @@
   var DONE_STAY = 3000;              // 다 뽑은 뒤 처음으로 돌아가기까지
   var POLL = 1000;
   var RETRY = 5000;
+  var REQUEST_TIMEOUT = 10000;       // 서버가 이만큼 답이 없으면 연결이 끊긴 것으로 본다
   var LONG_PRESS = 2000;             // 제목을 이만큼 누르면 관리자 비밀번호 입력
 
   var state = {
@@ -84,11 +85,16 @@
       options.headers['Content-Type'] = 'application/json';
       options.body = JSON.stringify(body);
     }
-    return fetch(url, options).then(function (response) {
+    var answer = fetch(url, options).then(function (response) {
       return response.json().catch(function () { return {}; }).then(function (data) {
         return { status: response.status, data: data };
       });
     });
+    // 와이파이가 조용히 끊기면 fetch는 끝없이 기다린다. 일정 시간 안에 답이 없으면 실패로 본다.
+    var giveUp = new Promise(function (resolve, reject) {
+      setTimeout(function () { reject(new Error('timeout')); }, REQUEST_TIMEOUT);
+    });
+    return Promise.race([answer, giveUp]);
   }
 
   // ---------------------------------------------------------------- 메뉴 불러오기
@@ -533,7 +539,8 @@
   }
 
   function progressText(job) {
-    if (!job || job.state === 'queued') { return '순서를 기다리는 중이에요'; }
+    if (!job) { return '키오스크에 보내는 중이에요'; }
+    if (job.state === 'queued') { return '순서를 기다리는 중이에요'; }
     if (job.sheets === 1) { return '종이가 나오고 있어요'; }
     return job.sheets + '장 중 ' + Math.min(job.sheets, job.done + 1) + '장째';
   }
