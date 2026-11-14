@@ -21,6 +21,7 @@
 
 :root {
   --line: 3px;                 /* 판의 테두리 굵기 */
+  --tile-min: 11rem;           /* 판에서 칸 하나의 최소 가로. 이 값이 들어가는 만큼 열이 생긴다 */
   --torn-ink: #4d3c00;         /* 뜯긴 칸 위의 글자 */
   --hint: #5c5c5c;             /* 흰 바탕 위의 보조 글자 */
   --danger: #b00020;
@@ -157,7 +158,8 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 /* 칸들이 절취선으로 맞붙은 한 장의 판 */
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* 칸의 최소 가로(--tile-min)가 들어가는 만큼 열이 생긴다. 좁으면 2열, 넓으면 4열 이상. */
+  grid-template-columns: repeat(auto-fill, minmax(var(--tile-min), 1fr));
   background: var(--paper);
   border: var(--line) solid var(--ink);
   border-right: 0;
@@ -175,13 +177,14 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   word-break: keep-all;
 }
 .tile, .grid__filler { border-right: var(--line) dashed var(--ink); border-bottom: var(--line) dashed var(--ink); }
-.grid > :nth-child(3n) { border-right-style: solid; }
+.grid > .is-row-end { border-right-style: solid; }
 .grid > .is-last-row { border-bottom-style: solid; }
 .grid__filler { background: var(--paper); }
 .tile__no {
   flex: none;
   min-width: 2.375rem;
   margin-right: 0.375rem;
+  text-align: center;
   font-family: var(--font-display);
   font-weight: 400;
   font-size: 1.875rem;

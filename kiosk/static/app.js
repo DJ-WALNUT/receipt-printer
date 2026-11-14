@@ -247,16 +247,36 @@
       }
       return node;
     });
-    while (cells.length % 3 !== 0) {        // 마지막 줄의 빈자리도 판의 칸으로 채운다
+    cells.forEach(function (node) { dom.grid.appendChild(node); });
+    // 열 수는 CSS(--tile-min)와 판 너비가 정한다. 실제로 몇 열이 됐는지 읽어서 테두리를 맞춘다.
+    var columns = gridColumns();
+    state.gridColumns = columns;
+    while (cells.length % columns !== 0) {   // 마지막 줄의 빈자리도 판의 칸으로 채운다
       var filler = el('div', 'grid__filler');
       filler.setAttribute('aria-hidden', 'true');
       cells.push(filler);
+      dom.grid.appendChild(filler);
     }
     cells.forEach(function (node, index) {
-      if (index >= cells.length - 3) { node.className += ' is-last-row'; }
-      dom.grid.appendChild(node);
+      if (index % columns === columns - 1) { node.className += ' is-row-end'; }
+      if (index >= cells.length - columns) { node.className += ' is-last-row'; }
     });
   }
+
+  function gridColumns() {
+    var tracks = window.getComputedStyle(dom.grid).gridTemplateColumns;
+    var count = tracks && tracks !== 'none' ? tracks.split(/\s+/).length : 0;
+    return count > 0 ? count : 3;
+  }
+
+  // 화면을 돌리거나 창 크기가 바뀌어 열 수가 달라지면 판을 다시 그린다
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (state.catalog && gridColumns() !== state.gridColumns) { renderGrid(); }
+    }, 150);
+  });
 
   // ---------------------------------------------------------------- 그리기: 오른쪽 패널
 
