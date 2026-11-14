@@ -13,27 +13,27 @@ colors:
   danger: "#b00020"
 typography:
   display:
-    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "3.25rem"
     fontWeight: 400
     lineHeight: 1.05
   action:
-    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "2.75rem"
     fontWeight: 400
     lineHeight: 1
   headline:
-    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "2.625rem"
     fontWeight: 400
     lineHeight: 1
   title:
-    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "2.25rem"
     fontWeight: 400
     lineHeight: 1.1
   numeral:
-    fontFamily: "'DNF Bit Bit v2', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
+    fontFamily: "'DNF Bit Bit v2', 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"
     fontSize: "1.875rem"
     fontWeight: 400
     lineHeight: 1
@@ -252,7 +252,7 @@ components:
 
 ## Typography
 
-**Display Font:** DNF Bit Bit v2 (대체: Apple SD Gothic Neo, Malgun Gothic, sans-serif). `kiosk/static/fonts/DNFBitBitv2.ttf`를 직접 내려준다.
+**Display Font:** DNF Bit Bit v2 (대체: Jua, Apple SD Gothic Neo, Malgun Gothic, sans-serif). `kiosk/static/fonts/DNFBitBitv2.ttf`를 직접 내려준다. 이 파일이 없으면 함께 들어 있는 Jua(`Jua-Regular.ttf`)로 보인다.
 **Body Font:** Apple SD Gothic Neo (대체: Malgun Gothic, Noto Sans KR, sans-serif). 기기에 있는 고딕을 쓴다.
 
 **Character:** 통통하고 둥근 던파 비트비트체가 간판과 번호를 맡고, 굵은 시스템 고딕이 나머지 전부를 맡는다. 던파 비트비트체는 굵기가 하나(400)뿐이며, 고딕은 700이 기본이고 400은 설명글에만 쓴다.
