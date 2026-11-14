@@ -23,7 +23,7 @@
   --line: 3px;                 /* 판의 테두리 굵기 */
   --panel-width: 23.25rem;     /* 오른쪽 패널의 가로. 패널을 넓히려면 여기를 바꾼다 (.panel 에 min-width 를 주면 칸 밖으로 넘쳐 잘린다) */
   --tab-min: 10rem;            /* 묶음 탭 하나의 최소 가로. 다 안 들어가면 좌우로 밀어서 본다 */
-  --tile-min: 13rem;           /* 판에서 칸 하나의 최소 가로. 이 값이 들어가는 만큼 열이 생긴다 */
+  --tile-min: 219px;           /* 판에서 칸 하나의 최소 가로. 이 값이 들어가는 만큼 열이 생긴다 */
   --torn-ink: #4d3c00;         /* 뜯긴 칸 위의 글자 */
   --hint: #5c5c5c;             /* 흰 바탕 위의 보조 글자 */
   --danger: #b00020;
@@ -41,7 +41,7 @@ html {
 body {
   height: 100%;
   overflow: hidden;
-  background: var(--board);
+  background: var(--ink);      /* 틀 밖이 드러나도 아래 띠와 이어져 보이게 */
   color: var(--ink);
   font-family: var(--font-body);
   font-weight: 700;
@@ -73,12 +73,16 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 
 /* ------------------------------------------------------------ 틀 */
 
+/* 화면 네 변에 붙인다. 홈 화면에 추가한 아이패드에서는 height: 100% 가 상태 표시줄만큼
+   짧게 잡혀 아래에 빈칸이 남기 때문에, 높이를 재지 않고 위아래를 직접 고정한다. */
 .app {
-  height: 100%;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  padding-top: 0;
-  padding-top: env(safe-area-inset-top);
 }
 
 .bar {
@@ -86,6 +90,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   display: flex;
   align-items: center;
   padding: 0 1.5rem;
+  padding-top: env(safe-area-inset-top);   /* 머리띠가 상태 표시줄(시계, 배터리) 뒤까지 올라간다 */
   background: var(--accent);
   color: var(--paper);
   border-bottom: 6px solid var(--ink);
@@ -124,6 +129,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--panel-width);
   min-height: 0;
+  background: var(--board);
 }
 
 /* ------------------------------------------------------------ 판 */
