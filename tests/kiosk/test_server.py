@@ -188,3 +188,32 @@ def test_missing_or_broken_theme_file_uses_defaults(tmp_path):
         c = create_app(queue=JobQueue(runner=FakeRunner()), pin=None, theme_path=path).test_client()
         assert "--board: #FFD400;" in c.get("/theme.css").get_data(as_text=True)
         assert c.get("/api/catalog").get_json()["name"] == "영수증 뽑기"
+
+
+def test_error_says_which_field(client):
+    r = client.post("/api/print", json={"content": "sudoku", "mode": "answer", "values": {"number": "안녕"}, "sheets": 1})
+    assert r.status_code == 400 and r.get_json()["field"] == "number"
+    r = client.post("/api/print", json={"content": "sudoku", "mode": "new", "values": {}, "sheets": 9})
+    assert r.status_code == 400 and r.get_json()["field"] is None
+
+
+def test_staff_see_why_a_content_was_dropped_and_visitors_do_not(tmp_path):
+    good = tmp_path / "good"
+    bad = tmp_path / "bad"
+    for folder in (good, bad):
+        folder.mkdir()
+        (folder / f"{folder.name}.py").write_text("", encoding="utf-8")
+    (good / "content.toml").write_text('title = "좋은 것"\n[[mode]]\nid = "new"\nlabel = "새 판"\n', encoding="utf-8")
+    (bad / "content.toml").write_text('title = "나쁜 것"\nkoisk = true\n', encoding="utf-8")
+    c = create_app(queue=JobQueue(runner=FakeRunner()), pin="1234", root=tmp_path).test_client()
+    visitor = c.get("/api/catalog").get_json()
+    assert [i["name"] for i in visitor["menu"]] == ["good"] and "errors" not in visitor
+    c.post("/api/admin/login", json={"pin": "1234"})
+    staff = c.get("/api/catalog").get_json()
+    assert len(staff["errors"]) == 1 and "bad" in staff["errors"][0] and "koisk" in staff["errors"][0]
+
+
+def test_catalog_version_changes_when_the_server_restarts(client):
+    first = client.get("/api/catalog").get_json()["version"]
+    assert first and client.get("/api/catalog").get_json()["version"] == first
+    assert make_client().get("/api/catalog").get_json()["version"] != first

@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "kiosk/static/style.css"
+        ],
+        "createdAt": "2026-11-14T11:36:16.611Z",
+        "reason": "finish reviewer verdict: .panel left rule and .bar bottom rule are ink dividers between regions, not card accents"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "kiosk/static/index.html"
+        ],
+        "createdAt": "2026-11-14T11:37:28.406Z",
+        "reason": "finish reviewer verdict: same ink dividers, reported through the linked stylesheet"
+      }
+    ]
+  }
+}

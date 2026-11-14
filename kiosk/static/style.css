@@ -60,6 +60,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   height: 100%;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  padding-top: 0;
   padding-top: env(safe-area-inset-top);
 }
 
@@ -179,6 +180,17 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 }
 .tile--torn .tile__no,
 .tile--torn[aria-pressed="true"] .tile__no { color: var(--torn-ink); }
+/* 뽑기를 누른 순간: 흰 칸이 왼쪽에서 오른쪽으로 뜯겨 나간다 */
+.tile--tearing { position: relative; overflow: hidden; }
+.tile--tearing::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: var(--paper);
+  transform-origin: right center;
+  animation: tear 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes tear { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 
 /* ------------------------------------------------------------ 오른쪽 패널 */
 
@@ -186,13 +198,14 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   min-height: 0;
   display: flex;
   flex-direction: column;
+  padding: 1.25rem 1.5rem;
   padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom));
   background: var(--paper);
   border-left: 6px solid var(--ink);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
-.panel > * + * { margin-top: 0.875rem; }
+.panel > * + * { margin-top: 0.75rem; }
 .panel__title {
   font-family: var(--font-display);
   font-weight: 400;
@@ -219,7 +232,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   font-weight: 400;
   font-size: 1.75rem;
   line-height: 1;
-  color: var(--accent);
+  color: var(--ink);
 }
 .panel__push { margin-top: auto !important; padding-top: 0.875rem; }
 .panel__push > * + * { margin-top: 0.75rem; }
@@ -245,7 +258,22 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 }
 .choice:active { background: var(--board-shade); }
 .choice[aria-pressed="true"] { background: var(--board); }
-.choice--small { min-height: 3rem; font-size: 1.0625rem; }
+.choice--small { min-height: 2.875rem; font-size: 1.0625rem; }
+
+/* 무엇을 뽑을지 고르는 줄: 옵션 버튼과 달리 서로 맞붙어 있다 */
+.segments { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 var(--line) var(--line) 0; }
+.segment {
+  min-height: 3rem;
+  margin: 0 calc(-1 * var(--line)) calc(-1 * var(--line)) 0;
+  padding: 0.25rem 0.5rem;
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  font-size: 1.0625rem;
+  line-height: 1.15;
+  word-break: keep-all;
+}
+.segment:active { background: var(--board-shade); }
+.segment[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 
 /* 숫자: 빼기 / 값 / 더하기 */
 .stepper { display: flex; align-items: stretch; }
@@ -296,6 +324,9 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 .textbox::placeholder { color: var(--hint); font-weight: 400; opacity: 1; }
 .textbox:focus, .stepper__value:focus { outline: var(--line) solid var(--select); outline-offset: 2px; }
 
+.why { font-size: 1.0625rem; font-weight: 400; line-height: 1.35; text-align: center; }
+.textbox--wrong { border-color: var(--danger); }
+.notice--field { margin-top: 0.5rem; }
 .notice {
   padding: 0.75rem 1rem;
   border: var(--line) solid var(--danger);
@@ -307,7 +338,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 
 .go {
   width: 100%;
-  min-height: 5.25rem;
+  min-height: 5.75rem;
   background: var(--accent);
   color: var(--paper);
   border: 4px solid var(--ink);
@@ -363,6 +394,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   min-height: 4rem;
   display: flex;
   align-items: center;
+  padding: 0.5rem 1.5rem;
   padding: 0.5rem 1.5rem calc(0.5rem + env(safe-area-inset-bottom));
   background: var(--ink);
   color: var(--paper);
@@ -411,6 +443,9 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 }
 .key:active { background: var(--board); }
 .key--word { font-size: 1.125rem; }
+.key--primary { background: var(--accent); color: var(--paper); }
+.key--primary:active { background: var(--ink); }
+.plain:disabled { border-style: dashed; color: var(--hint); border-color: var(--hint); }
 .jobs { list-style: none; border-top: var(--line) solid var(--ink); }
 .jobs li { display: flex; align-items: baseline; padding: 0.75rem 0; border-bottom: var(--line) dashed var(--ink); font-size: 1.125rem; }
 .jobs__state { flex: none; width: 6.5rem; }
@@ -428,9 +463,15 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 
 /* 세로로 세웠을 때: 판이 위, 패널이 아래 */
 @media (orientation: portrait) {
-  .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
-  .panel { border-left: 0; border-top: 6px solid var(--ink); }
+  .main { display: flex; flex-direction: column; }
+  .board { flex: 0 1 auto; max-height: 62%; }
+  .tile { min-height: 4.5rem; }
+  .panel { flex: 1 1 0; border-left: 0; border-top: 6px solid var(--ink); padding-bottom: 0; }
+  .panel__push { position: -webkit-sticky; position: sticky; bottom: 0; padding-bottom: 1.25rem; background: var(--paper); }
 }
 @media (orientation: portrait) and (max-width: 600px) { html { font-size: 11px; } }
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+  .tile--tearing::after { animation: none; display: none; }
+}

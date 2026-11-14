@@ -26,6 +26,9 @@
     sheets: 1,
     phase: 'form',       // form | sending | printing | done | failed
     notice: '',          // 옵션 화면에 보일 오류
+    noticeField: null,   // 그 오류가 어느 항목 탓인지 (항목 id)
+    version: null,       // 서버가 다시 뜨면 바뀐다
+    tornJob: null,       // 뜯기는 움직임을 이미 보여준 작업
     job: null,           // 지금 따라가고 있는 인쇄 작업
     jobContent: null,    // 그 작업의 콘텐츠 이름 (뜯긴 칸 표시용)
     offline: false,
@@ -35,7 +38,8 @@
   var $ = function (id) { return document.getElementById(id); };
   var dom = {
     name: $('name'), status: $('status'), tabs: $('tabs'), grid: $('grid'), panel: $('panel'),
-    strip: $('strip'), overlay: $('overlay'), queueButton: $('queueButton'), logoutButton: $('logoutButton')
+    strip: $('strip'), overlay: $('overlay'), queueButton: $('queueButton'), logoutButton: $('logoutButton'),
+    staffBadge: $('staffBadge')
   };
 
   // ---------------------------------------------------------------- 작은 도구
@@ -102,8 +106,23 @@
     });
   }
 
+  /* 처음 화면에 있을 때 조용히 메뉴를 다시 받는다. 서버가 새로 떴으면 화면 파일까지 새로 받는다. */
+  function refreshCatalog() {
+    api('GET', '/api/catalog').then(function (result) {
+      if (result.status !== 200) { return; }
+      state.offline = false;
+      if (state.version && result.data.version !== state.version) {
+        if (atHome() && !jobActive()) { window.location.reload(); }
+        return;
+      }
+      if (atHome() && result.data.role !== state.catalog.role) { setCatalog(result.data); }
+      else { renderBar(); renderStrip(); }
+    }).catch(function () { state.offline = true; renderBar(); renderStrip(); });
+  }
+
   function setCatalog(catalog) {
     state.catalog = catalog;
+    state.version = catalog.version;
     state.tabs = [];
     state.numbers = {};
     var number = 0;
@@ -152,6 +171,7 @@
     });
     if (!keepValues) { state.sheets = 1; }
     state.notice = '';
+    state.noticeField = null;
   }
 
   function selectTab(index) {
@@ -171,7 +191,9 @@
     state.values = {};
     state.sheets = 1;
     state.notice = '';
+    state.noticeField = null;
     state.phase = 'form';
+    if (!jobActive()) { state.job = null; state.jobContent = null; }
     closeOverlay();
     if (document.activeElement && document.activeElement.blur) { document.activeElement.blur(); }
     renderAll();
@@ -185,11 +207,11 @@
     var staff = isStaff();
     dom.queueButton.hidden = !staff;
     dom.logoutButton.hidden = !staff;
-    dom.status.className = 'pill' + (state.offline ? ' pill--trouble' : staff ? ' pill--staff' : '');
+    dom.staffBadge.hidden = !staff;
+    dom.status.className = 'pill' + (state.offline ? ' pill--trouble' : '');
     if (state.offline) { dom.status.textContent = '연결 끊김'; }
     else if (!state.catalog) { dom.status.textContent = '불러오는 중'; }
-    else if (staff) { dom.status.textContent = '관리자'; }
-    else if (jobActive()) { dom.status.textContent = '뽑는 중'; }
+    else if (jobActive()) { dom.status.textContent = state.job.state === 'queued' ? '기다리는 중' : '뜯는 중'; }
     else { dom.status.textContent = '준비됐어요'; }
   }
 
@@ -218,7 +240,10 @@
       node.appendChild(el('span', 'tile__no', String(state.numbers[content.name])));
       node.appendChild(el('span', 'tile__title', content.title));
       node.setAttribute('aria-pressed', state.content && state.content.name === content.name ? 'true' : 'false');
-      if (jobActive() && state.jobContent === content.name) { node.className += ' tile--torn'; }
+      if (state.jobContent === content.name && (jobActive() || state.phase === 'done')) {
+        node.className += ' tile--torn';
+        if (state.job && state.tornJob !== state.job.id) { node.className += ' tile--tearing'; state.tornJob = state.job.id; }
+      }
       return node;
     });
     while (cells.length % 3 !== 0) {        // 마지막 줄의 빈자리도 판의 칸으로 채운다
@@ -250,6 +275,11 @@
     ['왼쪽 판에서 뽑고 싶은 칸을 눌러요.', '난이도나 장 수를 정해요.', '뽑기를 누르면 프린터에서 종이가 나와요.']
       .forEach(function (text) { steps.appendChild(el('li', null, text)); });
     dom.panel.appendChild(steps);
+    var bottom = el('div', 'panel__push');
+    var go = button('go', '뽑기!', function () {});
+    go.disabled = true;
+    bottom.appendChild(go);
+    dom.panel.appendChild(bottom);
   }
 
   function renderForm() {
@@ -258,9 +288,11 @@
     dom.panel.appendChild(el('h2', 'panel__title', state.numbers[content.name] + '번 ' + content.title));
 
     if (content.modes.length > 1) {
-      var modes = el('div', 'choices choices--2');
+      var modes = el('div', 'segments');
+      modes.setAttribute('role', 'group');
+      modes.setAttribute('aria-label', '무엇을 뽑을까요');
       content.modes.forEach(function (m) {
-        var node = button('choice choice--small', m.label, function () { setMode(m, false); renderPanel(); });
+        var node = button('segment', m.label, function () { setMode(m, false); renderPanel(); });
         node.setAttribute('aria-pressed', m.id === mode.id ? 'true' : 'false');
         modes.appendChild(node);
       });
@@ -271,16 +303,24 @@
     if (mode.sheets) { dom.panel.appendChild(renderSheets()); }
 
     var bottom = el('div', 'panel__push');
-    if (state.notice) {
+    if (state.notice && !noticeShownAtField()) {
       var notice = el('p', 'notice', state.notice);
       notice.setAttribute('role', 'alert');
       bottom.appendChild(notice);
     }
+    var why = el('p', 'why', '');
+    why.id = 'why';
+    bottom.appendChild(why);
     var go = button('go', '뽑기!', submit);
     go.id = 'go';
-    go.disabled = !ready();
     bottom.appendChild(go);
     dom.panel.appendChild(bottom);
+    refreshGo();
+  }
+
+  function noticeShownAtField() {
+    if (!state.noticeField || !state.mode) { return false; }
+    return state.mode.fields.some(function (field) { return field.id === state.noticeField; });
   }
 
   function labelFor(field, note) {
@@ -291,11 +331,15 @@
 
   function refreshGo() {
     var go = $('go');
-    if (go) { go.disabled = !ready(); }
+    var why = $('why');
+    var reason = missing();
+    if (go) { go.disabled = state.phase !== 'form' || state.offline || !!reason; }
+    if (why) { why.textContent = reason; why.hidden = !reason; }
   }
 
   function renderField(field) {
     var box = el('div', 'field');
+    var wrong = state.notice && state.noticeField === field.id;
     if (field.type === 'choice') {
       box.appendChild(labelFor(field));
       var count = field.choices.length;
@@ -343,9 +387,15 @@
       input.setAttribute('autocapitalize', 'off');
       input.setAttribute('spellcheck', 'false');
       input.setAttribute('enterkeyhint', 'done');
+      if (wrong) { input.className += ' textbox--wrong'; input.setAttribute('aria-invalid', 'true'); }
       input.addEventListener('input', function () { state.values[field.id] = input.value; refreshGo(); });
       input.addEventListener('keydown', function (event) { if (event.key === 'Enter') { input.blur(); } });
       box.appendChild(input);
+    }
+    if (wrong) {
+      var notice = el('p', 'notice notice--field', state.notice);
+      notice.setAttribute('role', 'alert');
+      box.appendChild(notice);
     }
     return box;
   }
@@ -412,16 +462,25 @@
     return box;
   }
 
-  /* 뽑기를 눌러도 되는지: 꼭 넣어야 하는 칸이 비어 있지 않은지만 본다. 나머지 검사는 서버가 한다. */
-  function ready() {
-    if (state.phase !== 'form' || !state.mode || state.offline) { return false; }
-    return state.mode.fields.every(function (field) {
+  /* 아직 뽑을 수 없는 이유를 한 문장으로. 뽑을 수 있으면 ''.
+     꼭 넣어야 하는 칸이 비었는지만 본다. 나머지 검사는 서버가 한다. */
+  function missing() {
+    if (!state.mode) { return ''; }
+    var reason = '';
+    state.mode.fields.forEach(function (field) {
+      if (reason) { return; }
       var value = state.values[field.id];
-      if (field.type === 'pick') { return value.length >= field.min && value.length <= field.max; }
-      if (field.type === 'names') { return splitNames(value).length >= field.min; }
-      if (field.type === 'text') { return !field.required || String(value || '').trim() !== ''; }
-      return true;
+      if (field.type === 'pick' && value.length < field.min) { reason = field.label + ' ' + field.min + '명 이상 골라 주세요.'; }
+      else if (field.type === 'names' && splitNames(value).length < field.min) { reason = field.label + ' ' + field.min + '명 이상 적어 주세요.'; }
+      else if (field.type === 'text' && field.required && String(value || '').trim() === '') {
+        reason = "'" + field.label + "' 칸을 채우면 뽑을 수 있어요.";
+      }
     });
+    return reason;
+  }
+
+  function ready() {
+    return state.phase === 'form' && !!state.mode && !state.offline && !missing();
   }
 
   function splitNames(text) {
@@ -507,7 +566,7 @@
   function renderStrip() {
     clear(dom.strip);
     var tag = '';
-    var text = '칸을 고르고 뽑기를 누르면 프린터에서 종이가 나와요.';
+    var text = state.catalog ? '한 번에 ' + state.catalog.max_sheets + '장까지 뽑을 수 있어요.' : '';
     if (state.offline) {
       tag = '연결 끊김';
       text = '키오스크에 연결할 수 없어요. 다시 연결하는 중이에요.';
@@ -515,6 +574,9 @@
       var number = state.numbers[state.jobContent];
       tag = state.job.state === 'queued' ? '기다리는 중' : '뜯는 중';
       text = (number ? number + '번 ' : '') + state.job.title + ' · ' + progressText(state.job);
+    } else if (state.job && state.job.state === 'failed' && state.phase === 'form') {
+      tag = '뽑지 못함';      // 관리자가 기다리지 않고 넘어간 작업이 실패했을 때
+      text = state.job.title + ' · ' + (state.job.message || '인쇄하지 못했습니다.');
     }
     if (tag) { dom.strip.appendChild(el('span', 'strip__tag', tag)); }
     dom.strip.appendChild(el('span', 'strip__text', text));
@@ -540,6 +602,7 @@
     var contentName = state.content.name;
     state.phase = 'sending';
     state.notice = '';
+    state.noticeField = null;
     if (!jobActive()) { state.job = null; }
     renderAll();
     api('POST', '/api/print', {
@@ -555,7 +618,9 @@
       }
       state.phase = 'form';
       state.notice = result.data.error || '뽑지 못했어요. 다시 눌러 주세요.';
+      state.noticeField = result.data.field || null;
       renderAll();
+      if (isStaff()) { refreshRole(); }   // 관리자 시간이 끝나 거절됐을 수 있다
     }).catch(function () {
       state.phase = 'form';
       state.notice = '키오스크에 연결할 수 없어요. 잠시 뒤에 다시 눌러 주세요.';
@@ -592,7 +657,14 @@
   }
 
   var homeTimer = null;
+  function refreshRole() {
+    api('GET', '/api/catalog').then(function (result) {
+      if (result.status === 200 && result.data.role !== state.catalog.role) { setCatalog(result.data); }
+    }).catch(function () {});
+  }
+
   function finishJob() {
+    state.lastTouch = Date.now();
     var watchingPanel = state.phase === 'printing' || state.phase === 'sending';
     if (watchingPanel) { state.phase = state.job.state === 'done' ? 'done' : 'failed'; }
     renderAll();
@@ -642,8 +714,10 @@
         if (result.status === 200) { closeOverlay(); loadCatalog(); return; }
         pin = '';
         drawDots();
+        message.className = 'notice';
+        message.setAttribute('role', 'alert');
         message.textContent = result.data.error || '들어가지 못했어요.';
-      }).catch(function () { message.textContent = '키오스크에 연결할 수 없어요.'; });
+      }).catch(function () { message.className = 'notice'; message.textContent = '키오스크에 연결할 수 없어요.'; });
     }
 
     var keys = el('div', 'keys');
@@ -652,14 +726,14 @@
     });
     keys.appendChild(button('key key--word', '지우기', function () { pin = pin.slice(0, -1); drawDots(); }));
     keys.appendChild(button('key', '0', function () { if (pin.length < 8) { pin += '0'; drawDots(); } }));
-    keys.appendChild(button('key key--word', '확인', send));
+    keys.appendChild(button('key key--word key--primary', '확인', send));
     box.appendChild(keys);
     box.appendChild(button('plain', '닫기', closeOverlay));
     drawDots();
     openOverlay(box);
   }
 
-  var STATE_WORD = { queued: '기다리는 중', running: '뽑는 중', done: '끝', failed: '실패', cancelled: '취소됨' };
+  var STATE_WORD = { queued: '기다리는 중', running: '뜯는 중', done: '끝', failed: '실패', cancelled: '취소됨' };
 
   function openQueue() {
     var box = el('div', 'sheetbox sheetbox--wide');
@@ -668,10 +742,23 @@
     var empty = el('p', 'panel__lead', '');
     box.appendChild(list);
     box.appendChild(empty);
+    var dropped = (state.catalog.errors || []);
+    if (dropped.length) {
+      box.appendChild(el('h3', 'field__label', '설정 오류로 빠진 콘텐츠'));
+      var problems = el('ul', 'jobs');
+      dropped.forEach(function (text) {
+        var row = el('li');
+        row.appendChild(el('span', 'jobs__what', text));
+        problems.appendChild(row);
+      });
+      box.appendChild(problems);
+    }
     var buttons = el('div', 'buttons');
-    buttons.appendChild(button('plain plain--danger', '남은 인쇄 모두 취소', function () {
+    var cancel = button('plain plain--danger', '남은 인쇄 모두 취소', function () {
       api('POST', '/api/admin/cancel').then(refresh).catch(refresh);
-    }));
+    });
+    cancel.disabled = true;
+    buttons.appendChild(cancel);
     buttons.appendChild(button('plain', '닫기', closeOverlay));
     box.appendChild(buttons);
 
@@ -691,6 +778,7 @@
         list.hidden = jobs.length + recent.length === 0;
         empty.textContent = jobs.length === 0 ? '지금 기다리는 인쇄가 없어요.' : '';
         empty.hidden = jobs.length !== 0;
+        cancel.disabled = jobs.length === 0;
       }).catch(function () { empty.hidden = false; empty.textContent = '키오스크에 연결할 수 없어요.'; });
     }
     openOverlay(box);
@@ -739,8 +827,13 @@
       return;
     }
     if (state.phase === 'sending' || state.phase === 'printing') { return; }
-    if (quiet > IDLE_VISITOR && !atHome()) { goHome(); }
+    if (quiet > IDLE_VISITOR && !atHome()) { goHome(); refreshCatalog(); }
   }, 1000);
+
+  setInterval(function () {
+    if (state.catalog && atHome() && !jobActive()) { refreshCatalog(); }
+    else if (state.offline) { refreshCatalog(); }
+  }, 60 * 1000);
 
   renderAll();
   loadCatalog();

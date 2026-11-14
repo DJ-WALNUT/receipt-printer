@@ -27,8 +27,10 @@ def cleanup_outputs(root: Path, days: float) -> int:
     """콘텐츠 폴더의 output/ 에 쌓인 이미지 중 days일보다 오래된 것을 지운다. 지운 개수를 돌려준다."""
     cutoff = time.time() - days * 86400
     removed = 0
-    for path in Path(root).glob("**/output/*.png"):
-        if ".venv" in path.parts:
+    # 콘텐츠 폴더는 깊이 1~2 에만 있다. 저장소 전체(.git, .venv)를 훑지 않는다.
+    found = list(Path(root).glob("*/output/*.png")) + list(Path(root).glob("*/*/output/*.png"))
+    for path in found:
+        if path.parts[len(Path(root).parts)].startswith("."):
             continue
         try:
             if path.stat().st_mtime < cutoff:
@@ -52,6 +54,7 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
     for error in catalog.errors:
         log.warning("설정 오류로 뺀 콘텐츠 - %s", error)
     login = {"fails": 0, "locked_until": 0.0}
+    version = secrets.token_hex(4)   # 서버가 다시 뜨면 바뀐다. 화면이 새 메뉴와 새 화면 파일을 받아 가는 신호
 
     def role():
         """요청한 사람의 역할. 운영자 세션은 쓰는 동안 연장되고, 오래 쉬면 끝난다."""
@@ -88,6 +91,9 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
         described = hub.describe(catalog, role(), nicknames)
         described["admin_enabled"] = bool(pin)
         described["name"] = theme["name"]
+        described["version"] = version
+        if described["role"] == hub.STAFF:
+            described["errors"] = list(catalog.errors)   # 설정 오류로 빠진 콘텐츠와 이유
         return jsonify(described)
 
     @app.post("/api/print")
@@ -105,11 +111,11 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
             mode = next(m for m in content.modes if m.id == mode_id)
             sheets = hub.check_sheets(mode, body.get("sheets"), who)
         except hub.HubError as e:
-            return error(str(e), 400)
+            return jsonify({"error": str(e), "field": e.field}), 400
         try:
             job = queue.submit(content, args, sheets, who)
         except Busy:
-            return error("지금 다른 인쇄가 진행 중입니다. 잠시만 기다려 주세요.", 409)
+            return error("지금 다른 인쇄가 진행 중이에요. 잠시만 기다려 주세요.", 409)
         return jsonify(job.to_dict()), 202
 
     @app.get("/api/jobs/<job_id>")
@@ -126,7 +132,7 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
         if not pin:
             return error("관리자 기능이 꺼져 있습니다.", 403)
         if time.time() < login["locked_until"]:
-            return error("여러 번 틀렸습니다. 1분 뒤에 다시 시도해 주세요.", 429)
+            return error("여러 번 틀렸어요. 1분 뒤에 다시 해 주세요.", 429)
         if isinstance(given, str) and hmac.compare_digest(given.encode(), pin.encode()):
             login["fails"] = 0
             session["staff_seen"] = time.time()
@@ -134,7 +140,7 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
         login["fails"] += 1
         if login["fails"] >= LOGIN_TRIES:
             login["fails"], login["locked_until"] = 0, time.time() + LOGIN_LOCK
-        return error("비밀번호가 맞지 않습니다.", 403)
+        return error("비밀번호가 맞지 않아요.", 403)
 
     @app.post("/api/admin/logout")
     def admin_logout():

@@ -65,7 +65,7 @@ def friendly(returncode, output):
 def run_script(script: Path, args: list, timeout: float):
     """스크립트를 실행한다. (성공 여부, 실패했을 때 보여줄 문장)"""
     try:
-        r = subprocess.run([sys.executable, str(script), *args], capture_output=True, text=True,
+        r = subprocess.run([sys.executable, str(script), *args], capture_output=True, text=True, stdin=subprocess.DEVNULL,
                            encoding="utf-8", errors="replace", timeout=timeout, cwd=hub.ROOT,
                            env={**os.environ, "PYTHONUTF8": "1"})
     except subprocess.TimeoutExpired:
@@ -144,7 +144,8 @@ class JobQueue:
             except Exception:  # 대기열은 어떤 작업 때문에도 멈추면 안 된다
                 state, message = "failed", MSG_CRASH
             with self._lock:
-                job.state, job.message = state, message
+                job.message = message   # 상태보다 먼저: 화면이 "failed"를 본 순간 이유도 있어야 한다
+                job.state = state
                 self._prune()
 
     def _run(self, job):
