@@ -39,27 +39,27 @@ typography:
     lineHeight: 1
     fontFeature: "tabular-nums"
   cell:
-    fontFamily: "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
+    fontFamily: "'Tuktakpotato', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
     fontSize: "1.3125rem"
     fontWeight: 700
     lineHeight: 1.2
   control:
-    fontFamily: "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
+    fontFamily: "'Tuktakpotato', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
     fontSize: "1.25rem"
     fontWeight: 700
     lineHeight: 1.15
   body:
-    fontFamily: "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
+    fontFamily: "'Tuktakpotato', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
     fontSize: "1.1875rem"
     fontWeight: 400
     lineHeight: 1.45
   label:
-    fontFamily: "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
+    fontFamily: "'Tuktakpotato', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
     fontSize: "1.0625rem"
     fontWeight: 700
     lineHeight: 1.3
   hint:
-    fontFamily: "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
+    fontFamily: "'Tuktakpotato', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.3
@@ -253,7 +253,7 @@ components:
 ## Typography
 
 **Display Font:** DNF Bit Bit v2 (대체: Jua, Apple SD Gothic Neo, Malgun Gothic, sans-serif). `kiosk/static/fonts/DNFBitBitv2.ttf`를 직접 내려준다. 이 파일이 없으면 함께 들어 있는 Jua(`Jua-Regular.ttf`)로 보인다.
-**Body Font:** Apple SD Gothic Neo (대체: Malgun Gothic, Noto Sans KR, sans-serif). 기기에 있는 고딕을 쓴다.
+**Body Font:** 뚝딱감자체 (Tuktakpotato; 대체: Apple SD Gothic Neo, Malgun Gothic, Noto Sans KR, sans-serif). `kiosk/static/fonts/Tuktakpotato.ttf`를 직접 내려준다. 굵기가 하나뿐이라 모든 굵기에 같은 파일을 쓴다. 글자 몸통이 고딕보다 작아서, 2026-11-14에 본문 크기를 전부 0.125rem씩(칸 이름은 1.5rem으로) 키웠다. 아래 크기 목록은 고딕 기준 값이므로 실제 값은 `kiosk/static/style.css`를 따른다. 가운뎃점(·)은 이 글꼴에 없어 기기 고딕으로 나온다.
 
 **Character:** 통통하고 둥근 던파 비트비트체가 간판과 번호를 맡고, 굵은 시스템 고딕이 나머지 전부를 맡는다. 던파 비트비트체는 굵기가 하나(400)뿐이며, 고딕은 700이 기본이고 400은 설명글에만 쓴다.
 

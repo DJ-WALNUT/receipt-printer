@@ -6,6 +6,13 @@
   src: url('/static/fonts/Jua-Regular.ttf') format('truetype');
   font-display: swap;
 }
+/* 굵기가 하나뿐인 글꼴이다. 브라우저가 억지로 굵게 만들지 않도록 모든 굵기에 이 파일을 쓴다. */
+@font-face {
+  font-family: 'Tuktakpotato';
+  src: url('/static/fonts/Tuktakpotato.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
 @font-face {
   font-family: 'DNF Bit Bit v2';
   src: url('/static/fonts/DNFBitBitv2.ttf') format('truetype');
@@ -92,7 +99,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   padding: 0 1rem;
   border: var(--line) solid var(--paper);
   border-radius: 999px;
-  font-size: 1.0625rem;
+  font-size: 1.1875rem;
 }
 .bar__button:active { background: var(--paper); color: var(--accent); }
 .pill {
@@ -103,7 +110,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   border-radius: 999px;
   background: var(--paper);
   color: var(--ink);
-  font-size: 1.125rem;
+  font-size: 1.25rem;
 }
 .pill--staff { background: var(--ink); color: var(--board); }
 .pill--trouble { background: var(--ink); color: var(--paper); }
@@ -132,7 +139,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   background: var(--paper);
   border: var(--line) solid var(--ink);
   border-radius: 999px;
-  font-size: 1.25rem;
+  font-size: 1.375rem;
 }
 .tab__count { margin-left: 0.375rem; color: var(--accent); }
 .tab:active { background: var(--board-shade); }
@@ -155,7 +162,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   padding: 0.5rem 0.75rem 0.5rem 0.875rem;
   text-align: left;
   background: var(--paper);
-  font-size: 1.3125rem;
+  font-size: 1.5rem;
   line-height: 1.2;
   word-break: keep-all;
 }
@@ -210,7 +217,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
-.panel > * + * { margin-top: 0.75rem; }
+.panel > * + * { margin-top: 0.625rem; }
 .panel__title {
   font-family: var(--font-display);
   font-weight: 400;
@@ -218,13 +225,13 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   line-height: 1.1;
   word-break: keep-all;
 }
-.panel__lead { font-size: 1.1875rem; font-weight: 400; line-height: 1.45; }
+.panel__lead { font-size: 1.3125rem; font-weight: 400; line-height: 1.45; }
 .steps { list-style: none; counter-reset: step; }
 .steps li {
   counter-increment: step;
   display: flex;
   align-items: flex-start;
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   line-height: 1.35;
   padding: 0.875rem 0;
   border-top: var(--line) dashed var(--ink);
@@ -251,9 +258,9 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 }
 .panel__push > * + * { margin-top: 0.75rem; }
 
-.field__label { display: block; margin-bottom: 0.375rem; font-size: 1.0625rem; }
+.field__label { display: block; margin-bottom: 0.375rem; font-size: 1.1875rem; }
 .field__note { margin-left: 0.5rem; font-weight: 400; color: var(--hint); }
-.field__hint { margin-top: 0.375rem; font-size: 1rem; font-weight: 400; color: var(--hint); }
+.field__hint { margin-top: 0.375rem; font-size: 1.125rem; font-weight: 400; color: var(--hint); }
 
 /* 고르기: 서로 맞붙은 버튼 줄 */
 .choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-gap: 0.5rem; }
@@ -266,13 +273,13 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   background: var(--paper);
   border: var(--line) solid var(--ink);
   border-radius: 0.75rem;
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   line-height: 1.15;
   word-break: keep-all;
 }
 .choice:active { background: var(--board-shade); }
 .choice[aria-pressed="true"] { background: var(--board); }
-.choice--small { min-height: 2.875rem; font-size: 1.0625rem; }
+.choice--small { min-height: 2.875rem; font-size: 1.1875rem; }
 
 /* 무엇을 뽑을지 고르는 줄: 옵션 버튼과 달리 서로 맞붙어 있다 */
 .segments { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 var(--line) var(--line) 0; }
@@ -282,7 +289,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   padding: 0.25rem 0.5rem;
   background: var(--paper);
   border: var(--line) solid var(--ink);
-  font-size: 1.0625rem;
+  font-size: 1.1875rem;
   line-height: 1.15;
   word-break: keep-all;
 }
@@ -338,7 +345,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 .textbox::placeholder { color: var(--hint); font-weight: 400; opacity: 1; }
 .textbox:focus, .stepper__value:focus { outline: var(--line) solid var(--select); outline-offset: 2px; }
 
-.why { font-size: 1.0625rem; font-weight: 400; line-height: 1.35; text-align: center; word-break: keep-all; }
+.why { font-size: 1.1875rem; font-weight: 400; line-height: 1.35; text-align: center; word-break: keep-all; }
 .textbox--wrong { border-color: var(--danger); }
 .notice--field { margin-top: 0.5rem; }
 .notice {
@@ -346,7 +353,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   border: var(--line) solid var(--danger);
   border-radius: 0.75rem;
   color: var(--danger);
-  font-size: 1.0625rem;
+  font-size: 1.1875rem;
   line-height: 1.35;
 }
 
@@ -370,7 +377,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   background: var(--paper);
   border: var(--line) solid var(--ink);
   border-radius: 0.75rem;
-  font-size: 1.1875rem;
+  font-size: 1.3125rem;
 }
 .plain:active { background: var(--board-shade); }
 
@@ -412,7 +419,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   padding: 0.5rem 1.5rem calc(0.5rem + env(safe-area-inset-bottom));
   background: var(--ink);
   color: var(--paper);
-  font-size: 1.3125rem;
+  font-size: 1.4375rem;
   line-height: 1.25;
 }
 .strip__tag { flex: none; margin-right: 0.875rem; color: var(--board); }
@@ -456,12 +463,12 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   font-variant-numeric: tabular-nums;
 }
 .key:active { background: var(--board); }
-.key--word { font-size: 1.125rem; }
+.key--word { font-size: 1.25rem; }
 .key--primary { background: var(--accent); color: var(--paper); }
 .key--primary:active { background: var(--ink); }
 .plain:disabled { border-style: dashed; color: var(--hint); border-color: var(--hint); }
 .jobs { list-style: none; border-top: var(--line) solid var(--ink); }
-.jobs li { display: flex; align-items: baseline; padding: 0.75rem 0; border-bottom: var(--line) dashed var(--ink); font-size: 1.125rem; }
+.jobs li { display: flex; align-items: baseline; padding: 0.75rem 0; border-bottom: var(--line) dashed var(--ink); font-size: 1.25rem; }
 .jobs__state { flex: none; width: 6.5rem; }
 .jobs__what { flex: 1; min-width: 0; font-weight: 400; }
 .jobs__count { flex: none; margin-left: 0.75rem; font-variant-numeric: tabular-nums; }

@@ -10,7 +10,7 @@ DEFAULT_COLORS = {
 }
 DEFAULT_FONTS = {
     "display": "'DNF Bit Bit v2', 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif",
-    "body": "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif",
+    "body": "'Tuktakpotato', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif",
 }
 COLOR = re.compile(r"#[0-9a-fA-F]{6}")
 FONT = re.compile(r"[\w가-힣 ,'\"-]{1,200}")   # CSS를 깨뜨릴 수 있는 ; { } 등은 받지 않는다

@@ -14,4 +14,4 @@ paper = "#FFFFFF"               # 칸과 패널 바탕
 
 [fonts]                         # CSS font-family 값. 기기에 없는 글꼴은 뒤의 것으로 넘어간다
 display = "'DNF Bit Bit v2', 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif"            # 이름, 칸 번호, 뽑기 버튼
-body = "'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"      # 나머지 전부
+body = "'Tuktakpotato', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif"      # 나머지 전부
