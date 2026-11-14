@@ -236,18 +236,26 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 
 /* ------------------------------------------------------------ 오른쪽 패널 */
 
+/* 패널은 세 층이다: 제목(고정) / 내용(길면 여기만 스크롤) / 뽑기 영역(고정).
+   패널 자체는 스크롤되지 않으므로 뽑기 버튼이 내용과 함께 끌려가거나 내용이 버튼 뒤로 비치지 않는다. */
 .panel {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 1.25rem 1.5rem;
-  padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom));
   background: var(--paper);
   border-left: 6px solid var(--ink);
+  overflow: hidden;
+}
+.panel__head { flex: none; padding: 1.25rem 1.5rem 0.5rem; }
+.panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0.25rem 1.5rem 1rem;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
-.panel > * + * { margin-top: 0.625rem; }
+.panel__body > * + * { margin-top: 0.625rem; }
 .panel__title {
   font-family: var(--font-display);
   font-weight: 400;
@@ -276,14 +284,11 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   line-height: 1;
   color: var(--ink);
 }
-/* 뽑기 버튼은 패널이 길어져도 항상 보인다. 위쪽 절취선이 그 아래로 내용이 이어짐을 알린다. */
+/* 뽑기 영역: 항상 패널 맨 아래에 있다. 위쪽 절취선이 내용과 나눈다. */
 .panel__push {
-  margin-top: auto !important;
+  flex: none;
+  margin: 0 1.5rem;
   padding: 0.75rem 0 1.25rem;
-  position: -webkit-sticky;
-  position: sticky;
-  bottom: -1.25rem;
-  background: var(--paper);
   border-top: var(--line) dashed var(--ink);
 }
 .panel__push > * + * { margin-top: 0.75rem; }
@@ -311,7 +316,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
 .choice__sub { margin-top: 0.125rem; font-size: 0.75em; font-weight: 400; }
 .choice:active { background: var(--board-shade); }
 .choice[aria-pressed="true"] { background: var(--board); }
-.choice--small { min-height: 2.875rem; font-size: 1.1875rem; }
+.choice--small { min-height: 2.75rem; font-size: 1.1875rem; }
 
 /* 무엇을 뽑을지 고르는 줄: 옵션 버튼과 달리 서로 맞붙어 있다 */
 .segments { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 var(--line) var(--line) 0; }
@@ -519,8 +524,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 3; stroke-
   .main { display: flex; flex-direction: column; }
   .board { flex: 0 1 auto; max-height: 52%; }
   .tile { min-height: 4.5rem; }
-  .panel { flex: 1 1 0; border-left: 0; border-top: 6px solid var(--ink); padding-bottom: 0; }
-  .panel__push { bottom: 0; }
+  .panel { flex: 1 1 0; border-left: 0; border-top: 6px solid var(--ink); }
   .choice { min-height: 3rem; }
 }
 @media (orientation: portrait) and (max-width: 600px) { html { font-size: 11px; } }

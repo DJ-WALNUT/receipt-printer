@@ -287,8 +287,32 @@
 
   // ---------------------------------------------------------------- 그리기: 오른쪽 패널
 
+  var panelKey = '';   // 지금 패널이 무엇을 보여주는지. 같은 것을 다시 그릴 때는 스크롤 자리를 지킨다
+
   function renderPanel() {
+    var oldBody = dom.panel.querySelector('.panel__body');
+    var scrolled = oldBody ? oldBody.scrollTop : 0;
     clear(dom.panel);
+    fillPanel();
+    // 그려진 것을 세 층으로 나눈다: 첫 번째(제목)는 머리, panel__push 는 맨 아래 고정, 나머지는 스크롤되는 내용
+    var head = el('div', 'panel__head');
+    var body = el('div', 'panel__body');
+    var foot = null;
+    Array.prototype.slice.call(dom.panel.childNodes).forEach(function (node, index) {
+      if (index === 0) { head.appendChild(node); }
+      else if (node.className && String(node.className).indexOf('panel__push') !== -1) { foot = node; }
+      else { body.appendChild(node); }
+    });
+    dom.panel.appendChild(head);
+    dom.panel.appendChild(body);
+    if (foot) { dom.panel.appendChild(foot); }
+    var key = state.phase + '/' + (state.content ? state.content.name : '') + '/' + (state.mode ? state.mode.id : '');
+    if (key === panelKey) { body.scrollTop = scrolled; }
+    panelKey = key;
+    refreshGo();
+  }
+
+  function fillPanel() {
     if (state.phase === 'printing' || state.phase === 'sending') { return renderProgress(); }
     if (state.phase === 'done') { return renderDone(); }
     if (state.phase === 'failed') { return renderFailed(); }
