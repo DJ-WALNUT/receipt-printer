@@ -9,10 +9,11 @@ import secrets
 import time
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, request, send_from_directory, session
+from flask import Flask, Response, abort, jsonify, request, send_from_directory, session
 
 import hub
 from kiosk.jobs import Busy, JobQueue
+from kiosk.theme import load_theme, theme_css
 
 HERE = Path(__file__).resolve().parent
 STAFF_IDLE = 5 * 60        # 운영자 세션이 이만큼 쉬면 방문자로 돌아간다 (초)
@@ -39,7 +40,7 @@ def cleanup_outputs(root: Path, days: float) -> int:
 
 
 def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path = hub.ROOT,
-               secret: str | None = None) -> Flask:
+               secret: str | None = None, theme_path: Path | None = None) -> Flask:
     app = Flask(__name__, static_folder=str(HERE / "static"), static_url_path="/static")
     app.secret_key = secret or secrets.token_hex(32)
     app.json.ensure_ascii = False
@@ -47,6 +48,7 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
     queue = queue or JobQueue()
     catalog = hub.load(root)
     nicknames = hub.load_nicknames(HERE / "nicknames.txt")
+    theme = load_theme(theme_path or HERE / "theme.toml")
     for error in catalog.errors:
         log.warning("설정 오류로 뺀 콘텐츠 - %s", error)
     login = {"fails": 0, "locked_until": 0.0}
@@ -77,10 +79,15 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
             abort(404)
         return send_from_directory(hub.ROOT / "Galmuri-v2.40.4", name, max_age=86400)
 
+    @app.get("/theme.css")
+    def get_theme():
+        return Response(theme_css(theme), mimetype="text/css")
+
     @app.get("/api/catalog")
     def get_catalog():
         described = hub.describe(catalog, role(), nicknames)
         described["admin_enabled"] = bool(pin)
+        described["name"] = theme["name"]
         return jsonify(described)
 
     @app.post("/api/print")

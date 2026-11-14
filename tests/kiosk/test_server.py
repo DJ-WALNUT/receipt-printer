@@ -160,3 +160,31 @@ def test_cleanup_outputs(tmp_path):
     os.utime(keep, (past, past))
     assert cleanup_outputs(tmp_path, 7) == 1
     assert not old.exists() and new.exists() and keep.exists()
+
+
+def test_theme_css_and_kiosk_name_come_from_theme_file(client):
+    css = client.get("/theme.css")
+    assert css.status_code == 200 and css.mimetype == "text/css"
+    text = css.get_data(as_text=True)
+    assert "--board: #FFD400;" in text and "--accent: #E4002B;" in text and "--font-display:" in text
+    assert client.get("/api/catalog").get_json()["name"] == "영수증 뽑기"
+
+
+def test_custom_theme_overrides_and_unsafe_values_fall_back(tmp_path):
+    theme = tmp_path / "theme.toml"
+    theme.write_text('name = "나름 뽑기"\n[colors]\nboard = "#00ff00"\naccent = "red; } body { display:none"\n'
+                     '[fonts]\ndisplay = "Gugi; } * { color: red"\n', encoding="utf-8")
+    c = create_app(queue=JobQueue(runner=FakeRunner()), pin=None, theme_path=theme).test_client()
+    text = c.get("/theme.css").get_data(as_text=True)
+    assert "--board: #00ff00;" in text
+    assert "--accent: #E4002B;" in text and "display:none" not in text and "color: red" not in text
+    assert c.get("/api/catalog").get_json()["name"] == "나름 뽑기"
+
+
+def test_missing_or_broken_theme_file_uses_defaults(tmp_path):
+    broken = tmp_path / "theme.toml"
+    broken.write_text("name = [", encoding="utf-8")
+    for path in (broken, tmp_path / "none.toml"):
+        c = create_app(queue=JobQueue(runner=FakeRunner()), pin=None, theme_path=path).test_client()
+        assert "--board: #FFD400;" in c.get("/theme.css").get_data(as_text=True)
+        assert c.get("/api/catalog").get_json()["name"] == "영수증 뽑기"
