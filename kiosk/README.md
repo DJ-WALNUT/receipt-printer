@@ -46,6 +46,18 @@ sudo reboot
 
 설치 스크립트가 하는 일: 패키지 설치, 가상환경, 프린터 권한(`dialout`), 프린터 고정 경로(`/dev/receipt`), 설정 파일(`/etc/receipt-kiosk.env`), 자동 실행 서비스(`receipt-kiosk`).
 
+작동확인
+```
+systemctl is-active receipt-kiosk
+ls -l /dev/receipt
+```
+
+ip확인 및 와이파이 절전 확인
+```
+ip -br addr
+iw dev wlan0 get power_save
+```
+
 ## 새 콘텐츠 올리기
 
 PC에서:
@@ -91,6 +103,7 @@ bash deploy/update.sh
 | 증상 | 확인할 것 |
 |---|---|
 | 화면에 "프린터 연결을 확인해 주세요" | USB가 꽂혀 있는지, `ls -l /dev/receipt`에 경로가 보이는지. 안 보이면 `lsusb`에 `1cbe:0002`가 있는지 |
+| 접속이 됐다 안 됐다 함, `.local` 주소만 안 열림 | 파이 와이파이의 절전이 켜져 있으면 생긴다. `iw dev wlan0 get power_save`가 `on`이면 `bash deploy/setup-pi.sh`를 다시 실행하거나 `sudo iw dev wlan0 set power_save off`로 끈다. 오래 켜 둘 키오스크는 랜선 연결이 가장 확실하다 |
 | 아이패드에서 접속이 안 됨 | 아이패드와 파이가 같은 공유기에 있는지. `.local` 이름이 안 풀리면 `hostname -I`로 나온 IP로 접속한다. 공유기에서 파이 IP를 고정해 두면 편하다 |
 | 센터 와이파이에서만 접속이 안 됨 | 기기끼리의 통신을 막아 둔 와이파이일 수 있다. 파이를 유선 랜으로 연결하거나 별도 공유기를 쓴다 |
 | 화면이 "키오스크에 연결할 수 없습니다" | `systemctl status receipt-kiosk`, 로그는 `journalctl -u receipt-kiosk -e` |
