@@ -835,6 +835,34 @@
     dom.name.addEventListener(type, pressEnd);
   });
 
+  // 묶음 탭 줄: 손가락으로는 그냥 밀리지만 마우스로는 밀리지 않으므로, 끌기와 휠을 직접 처리한다 (PC에서 볼 때)
+  var drag = null;
+  dom.tabs.addEventListener('mousedown', function (event) {
+    if (event.button !== 0) { return; }
+    drag = { x: event.clientX, left: dom.tabs.scrollLeft, moved: false };
+  });
+  window.addEventListener('mousemove', function (event) {
+    if (!drag) { return; }
+    var dx = event.clientX - drag.x;
+    if (Math.abs(dx) > 5) { drag.moved = true; }
+    if (drag.moved) { dom.tabs.scrollLeft = drag.left - dx; }
+  });
+  window.addEventListener('mouseup', function () {
+    if (!drag) { return; }
+    var moved = drag.moved;
+    drag = null;
+    if (moved) {   // 끌다가 놓은 것은 탭을 누른 것으로 치지 않는다
+      var swallow = function (event) { event.stopPropagation(); event.preventDefault(); };
+      dom.tabs.addEventListener('click', swallow, true);
+      setTimeout(function () { dom.tabs.removeEventListener('click', swallow, true); }, 0);
+    }
+  });
+  dom.tabs.addEventListener('wheel', function (event) {
+    if (dom.tabs.scrollWidth <= dom.tabs.clientWidth) { return; }
+    dom.tabs.scrollLeft += event.deltaY || event.deltaX;
+    event.preventDefault();
+  });
+
   dom.queueButton.addEventListener('click', openQueue);
   dom.logoutButton.addEventListener('click', logout);
   dom.overlay.addEventListener('click', function (event) { if (event.target === dom.overlay) { closeOverlay(); } });
