@@ -45,6 +45,7 @@ type = "text"
 label = "낱말"
 arg = "--words"
 max_length = 100
+audience = "staff"
 '''
 
 STAFF_PARTS = '''
@@ -304,3 +305,57 @@ def test_load_nicknames(tmp_path):
     p.write_text("# 설명\n토끼\n\n 여우 \n", encoding="utf-8")
     assert hub.load_nicknames(p) == ["토끼", "여우"]
     assert hub.load_nicknames(tmp_path / "missing.txt") == []
+
+
+def test_unknown_keys_are_errors_so_an_audience_typo_cannot_fail_open(tmp_path):
+    make(tmp_path, "modetypo", STAFF_PARTS.replace('audience = "staff"\nargs', 'audiance = "staff"\nargs'))
+    make(tmp_path, "fieldtypo", STAFF_PARTS.replace('max = 30\naudience = "staff"', 'max = 30\naudeince = "staff"'))
+    make(tmp_path, "toptypo", 'title = "x"\nkoisk = false\n')
+    cat = hub.load(tmp_path)
+    assert cat.contents == {} and len(cat.errors) == 3
+    assert any("audiance" in e for e in cat.errors) and any("audeince" in e for e in cat.errors)
+    assert any("koisk" in e for e in cat.errors)
+
+
+def test_visitor_text_field_must_have_a_pattern(tmp_path):
+    open_text = FREE_TEXT.replace('audience = "staff"\n', "")
+    make(tmp_path, "open", open_text)
+    make(tmp_path, "staffmode", open_text.replace('label = "m"', 'label = "m"\naudience = "staff"'))
+    cat = hub.load(tmp_path)
+    assert list(cat.contents) == ["staffmode"]
+    assert len(cat.errors) == 1 and "open" in cat.errors[0] and "pattern" in cat.errors[0]
+
+
+BAD_SHAPES = [
+    'title = "x"\nmode = [1]\n',
+    'title = "x"\nmode = "new"\n',
+    'title = "x"\n[[mode]]\nid = "m"\nlabel = "m"\nfield = ["a"]\n',
+    'title = "x"\n[[mode]]\nid = "m"\nlabel = "m"\n[[mode.field]]\nid = "c"\ntype = "choice"\nlabel = "c"\n'
+    'arg = "--c"\nchoices = "ab"\ndefault = "a"\n',
+]
+
+
+@pytest.mark.parametrize("text", BAD_SHAPES)
+def test_wrongly_typed_entries_do_not_crash_the_catalog(tmp_path, text):
+    make(tmp_path, "good", SUDOKU)
+    make(tmp_path, "bad", text)
+    cat = hub.load(tmp_path)
+    assert list(cat.contents) == ["good"] and len(cat.errors) == 1 and "bad" in cat.errors[0]
+
+
+def test_patterns_match_ascii_digits_only_and_line_separators_are_refused(sudoku, tmp_path):
+    with pytest.raises(hub.HubError):
+        hub.build_args(sudoku, "answer", {"number": "SM４８２９１３"}, hub.VISITOR)
+    c = one(tmp_path, FREE_TEXT)
+    for bad in ["a b", "a b", "a\u0085b"]:
+        with pytest.raises(hub.HubError):
+            hub.build_args(c, "m", {"words": bad}, hub.STAFF)
+
+
+def test_error_names_the_field_it_is_about(sudoku):
+    with pytest.raises(hub.HubError) as e:
+        hub.build_args(sudoku, "answer", {"number": "안녕"}, hub.VISITOR)
+    assert e.value.field == "number"
+    with pytest.raises(hub.HubError) as e:
+        hub.build_args(sudoku, "nope", {}, hub.VISITOR)
+    assert e.value.field is None
