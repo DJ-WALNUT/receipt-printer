@@ -18,6 +18,7 @@ from typing import Sequence
 ROOT = Path(__file__).resolve().parent
 VISITOR, STAFF = "visitor", "staff"
 MAX_SHEETS = {VISITOR: 4, STAFF: 20}
+COPIES_ARG = "--copies"   # 같은 이미지를 여러 장 인쇄하는 공통 옵션 (receipt.add_output_args)
 
 FIELD_TYPES = ("choice", "number", "text", "names")
 AUDIENCES = ("all", "staff")
@@ -27,7 +28,7 @@ CONTROL = re.compile("[\x00-\x1f\x7f\x85  ]")   # 제어 문자와 줄 나�
 # 설정 파일에 쓸 수 있는 키. 여기 없는 키는 오타로 보고 오류로 알린다.
 # (audience 를 audiance 로 잘못 쓰면 운영자 전용이 방문자에게 열리기 때문에 조용히 넘기지 않는다.)
 CONTENT_KEYS = {"title", "order", "kiosk", "wait_between", "script", "seed_prefix", "mode"}
-MODE_KEYS = {"id", "label", "audience", "sheets", "args", "field"}
+MODE_KEYS = {"id", "label", "audience", "sheets", "same_sheets", "args", "field"}
 FIELD_KEYS = {"id", "type", "label", "arg", "audience", "default", "choices", "min", "max",
               "pattern", "max_length", "example", "required"}
 GROUP_KEYS = {"title", "order"}
@@ -67,6 +68,7 @@ class Mode:
     label: str
     audience: str
     sheets: bool
+    same_sheets: bool
     args: tuple
     fields: tuple
 
@@ -211,8 +213,11 @@ def _parse_mode(table, where):
         if field.type == "text" and field.pattern is None and "staff" not in (audience, field.audience):
             raise HubError(f"{where} 항목 '{field.id}': 방문자가 쓰는 글자 항목에는 pattern이 필요합니다 "
                            "(운영자만 쓰는 항목이면 audience = \"staff\")")
-    return Mode(mid, _need(table, "label", str, where), audience,
-                _typed(table, "sheets", bool, where, True), tuple(args), fields)
+    sheets = _typed(table, "sheets", bool, where, True)
+    same_sheets = _typed(table, "same_sheets", bool, where, False)
+    if same_sheets and not sheets:
+        raise HubError(f"{where}: same_sheets는 여러 장을 뽑는 모드에서만 쓸 수 있습니다")
+    return Mode(mid, _need(table, "label", str, where), audience, sheets, same_sheets, tuple(args), fields)
 
 
 def _read_toml(path):
@@ -407,6 +412,18 @@ def check_sheets(mode: Mode, sheets, role: str) -> int:
     return sheets
 
 
+def check_same(mode: Mode, same) -> bool:
+    """여러 장을 같은 문제로 뽑으라는 요청인지 검사한다. 그 모드가 받지 않으면 HubError.
+
+    True 면 스크립트를 장마다 실행하지 않고, 한 번만 COPIES_ARG 와 장 수를 붙여 실행한다.
+    """
+    if same is None or same is False:
+        return False
+    if same is not True or not mode.same_sheets:
+        raise HubError("같은 문제로 뽑을 수 없는 메뉴예요.")
+    return True
+
+
 # ---------------------------------------------------------------- 화면용 설명
 
 def _describe_field(field, role, nicknames):
@@ -419,7 +436,7 @@ def _describe_field(field, role, nicknames):
 
 
 def _describe_content(content, role, nicknames):
-    modes = [{"id": m.id, "label": m.label, "sheets": m.sheets,
+    modes = [{"id": m.id, "label": m.label, "sheets": m.sheets, "same_sheets": m.same_sheets,
               "fields": [_describe_field(f, role, nicknames) for f in m.fields if _visible(f, role)]}
              for m in content.modes if _visible(m, role)]
     return {"kind": "content", "name": content.name, "title": content.title, "modes": modes}

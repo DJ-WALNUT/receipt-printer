@@ -5,6 +5,7 @@ seed_prefix = "F"
 [[mode]]
 id = "new"
 label = "새 판"
+same_sheets = true
 [[mode.field]]
 id = "level"
 type = "choice"

@@ -5,6 +5,7 @@ seed_prefix = "W"
 [[mode]]
 id = "new"
 label = "새 판"
+same_sheets = true
 [[mode.field]]
 id = "level"
 type = "choice"
@@ -23,6 +24,7 @@ default = ""
 [[mode]]
 id = "custom"
 label = "낱말 직접 넣기"
+same_sheets = true
 audience = "staff"
 [[mode.field]]
 id = "level"

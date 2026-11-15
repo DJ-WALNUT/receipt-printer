@@ -359,3 +359,50 @@ def test_error_names_the_field_it_is_about(sudoku):
     with pytest.raises(hub.HubError) as e:
         hub.build_args(sudoku, "nope", {}, hub.VISITOR)
     assert e.value.field is None
+
+
+# ---------------------------------------------------------------- 같은 문제 여러 장 (same_sheets)
+
+SAME_SUDOKU = SUDOKU.replace('label = "새 판"', 'label = "새 판"\nsame_sheets = true')
+
+
+def test_same_sheets_defaults_to_false_and_is_described(tmp_path, sudoku):
+    assert [m.same_sheets for m in sudoku.modes] == [False, False]
+    plain = hub.describe(hub.load(tmp_path), hub.VISITOR)["menu"][0]["modes"]
+    assert [m["same_sheets"] for m in plain] == [False, False]
+    make(tmp_path, "sudoku", SAME_SUDOKU)
+    cat = hub.load(tmp_path)
+    assert cat.errors == () and [m.same_sheets for m in cat.contents["sudoku"].modes] == [True, False]
+    assert [m["same_sheets"] for m in hub.describe(cat, hub.VISITOR)["menu"][0]["modes"]] == [True, False]
+
+
+def test_same_sheets_on_a_one_sheet_mode_is_a_config_error(tmp_path):
+    make(tmp_path, "sudoku", SUDOKU.replace("sheets = false", "sheets = false\nsame_sheets = true"))
+    cat = hub.load(tmp_path)
+    assert cat.contents == {} and "same_sheets" in cat.errors[0]
+
+
+def test_same_sheets_must_be_a_boolean(tmp_path):
+    make(tmp_path, "sudoku", SUDOKU.replace('label = "새 판"', 'label = "새 판"\nsame_sheets = "yes"'))
+    cat = hub.load(tmp_path)
+    assert cat.contents == {} and "same_sheets" in cat.errors[0]
+
+
+@pytest.mark.parametrize("same,expected", [(None, False), (False, False), (True, True)])
+def test_check_same_on_a_supporting_mode(tmp_path, same, expected):
+    new = one(tmp_path, SAME_SUDOKU, "sudoku").modes[0]
+    assert hub.check_same(new, same) is expected
+
+
+@pytest.mark.parametrize("same", ["yes", 1, 0, "true", []])
+def test_check_same_refuses_non_booleans(tmp_path, same):
+    new = one(tmp_path, SAME_SUDOKU, "sudoku").modes[0]
+    with pytest.raises(hub.HubError):
+        hub.check_same(new, same)
+
+
+def test_check_same_refuses_modes_without_it(sudoku):
+    new = sudoku.modes[0]
+    assert hub.check_same(new, None) is False and hub.check_same(new, False) is False
+    with pytest.raises(hub.HubError):
+        hub.check_same(new, True)

@@ -101,3 +101,36 @@ def test_menu_does_not_ask_sheets_for_one_sheet_modes(monkeypatch):
     feed(monkeypatch, "2", "1", "2", "SM482913", "b", "q")
     main.menu()
     assert runs == [("sudoku", ["--answer", "SM482913"])]
+
+
+# ---------------------------------------------------------------- 같은 문제 여러 장
+
+@pytest.fixture
+def runs(monkeypatch):
+    calls = []
+    monkeypatch.setattr(main, "run", lambda content, args: calls.append(args) or 0)
+    return calls
+
+
+def test_same_question_runs_once_with_copies(monkeypatch, runs):
+    feed(monkeypatch, "", "", "3", "y")              # 모드, 난이도, 3장, 같은 문제
+    main.run_from_menu(CAT.contents["sudoku"], preview=True)
+    assert runs == [["--level", "medium", "--copies", "3", "--preview"]]
+
+
+def test_declining_runs_each_sheet_separately(monkeypatch, runs):
+    feed(monkeypatch, "", "", "3", "")               # Enter = 다른 문제
+    main.run_from_menu(CAT.contents["sudoku"], preview=False)
+    assert runs == [["--level", "medium"]] * 3
+
+
+def test_one_sheet_does_not_ask(monkeypatch, runs):
+    left = feed(monkeypatch, "", "", "1")
+    main.run_from_menu(CAT.contents["sudoku"], preview=False)
+    assert runs == [["--level", "medium"]] and left == []
+
+
+def test_modes_without_same_sheets_do_not_ask(monkeypatch, runs):
+    left = feed(monkeypatch, "", "2")                # 타로: 모드 Enter, 2장
+    main.run_from_menu(CAT.contents["tarot"], preview=False)
+    assert len(runs) == 2 and left == []
