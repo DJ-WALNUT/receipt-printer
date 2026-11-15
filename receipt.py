@@ -18,6 +18,7 @@
     ^ 로 시작         가운데 정렬 (예: "^ # 제목")
     왼쪽 || 오른쪽    양쪽 정렬 (예: "아메리카노 || 4,500")
 """
+import argparse
 import datetime
 import os
 import re
@@ -335,20 +336,38 @@ def strip_seed(text, prefix, ap, example):
     return text[1:]
 
 
+MAX_COPIES = 20
+
+
+def _copies(text):
+    """--copies 의 값. 1~MAX_COPIES 의 정수가 아니면 사용법 오류가 된다."""
+    if not text.isdigit() or not 1 <= int(text) <= MAX_COPIES:
+        raise argparse.ArgumentTypeError(f"1~{MAX_COPIES} 사이의 숫자여야 합니다")
+    return int(text)
+
+
 def add_output_args(ap):
     # 다른 PC에서는 포트 번호가 다르다. 환경 변수 RECEIPT_PORT로 기본값을 바꿀 수 있다.
     ap.add_argument("--port", default=os.environ.get("RECEIPT_PORT", "COM17"),
                     help="프린터 시리얼 포트 (기본: 환경 변수 RECEIPT_PORT, 없으면 COM17)")
     ap.add_argument("--preview", action="store_true", help="인쇄하지 않고 이미지만 저장")
     ap.add_argument("--no-cut", action="store_true", help="인쇄 후 자르지 않음")
+    ap.add_argument("--copies", type=_copies, default=1, metavar="장수",
+                    help=f"같은 이미지를 여러 장 인쇄 (1~{MAX_COPIES})")
 
 
 def output(sheet, content, args, tag=""):
-    """이미지를 항상 저장하고, --preview가 아니면 인쇄까지 한다. 결과 설명 문자열을 돌려준다."""
+    """이미지를 항상 저장하고, --preview가 아니면 인쇄까지 한다. 결과 설명 문자열을 돌려준다.
+
+    --copies 가 2 이상이면 같은 이미지를 그만큼 인쇄한다 (이미지는 한 번만 저장한다).
+    """
     path = save_output(sheet, content, tag)
     shown = path.relative_to(ROOT)
     mm = sheet.height / 8
+    copies = getattr(args, "copies", 1)
+    same = f" · 같은 것 {copies}장" if copies > 1 else ""
     if args.preview:
-        return f"미리보기 저장: {shown} (약 {mm:.0f}mm)"
-    send(sheet, args.port, cut=not args.no_cut)
-    return f"인쇄 전송 완료: {args.port} (약 {mm:.0f}mm), 이미지: {shown}"
+        return f"미리보기 저장: {shown} (약 {mm:.0f}mm){same}"
+    for _ in range(copies):
+        send(sheet, args.port, cut=not args.no_cut)
+    return f"인쇄 전송 완료: {args.port} (약 {mm:.0f}mm), 이미지: {shown}{same}"
