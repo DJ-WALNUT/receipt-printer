@@ -25,6 +25,7 @@
     mode: null,          // 고른 모드
     values: {},
     sheets: 1,
+    same: false,         // 여러 장을 모두 같은 문제로 뽑을지 (same_sheets 인 모드에서만 고를 수 있다)
     phase: 'form',       // form | sending | printing | done | failed
     notice: '',          // 옵션 화면에 보일 오류
     noticeField: null,   // 그 오류가 어느 항목 탓인지 (항목 id)
@@ -175,7 +176,7 @@
       else if (field.type === 'pick') { state.values[field.id] = []; }
       else { state.values[field.id] = ''; }
     });
-    if (!keepValues) { state.sheets = 1; }
+    if (!keepValues) { state.sheets = 1; state.same = false; }
     state.notice = '';
     state.noticeField = null;
   }
@@ -196,6 +197,7 @@
     state.mode = null;
     state.values = {};
     state.sheets = 1;
+    state.same = false;
     state.notice = '';
     state.noticeField = null;
     state.phase = 'form';
@@ -353,6 +355,7 @@
 
     mode.fields.forEach(function (field) { dom.panel.appendChild(renderField(field)); });
     if (mode.sheets) { dom.panel.appendChild(renderSheets()); }
+    if (mode.sheets && mode.same_sheets) { dom.panel.appendChild(renderSame()); }
 
     var bottom = el('div', 'panel__push');
     if (state.notice && !noticeShownAtField()) {
@@ -523,6 +526,23 @@
     return box;
   }
 
+  /* 여러 장을 뽑을 때 장마다 다른 문제로 할지, 모두 같은 문제로 할지 (여럿이 같은 문제로 겨룰 때).
+     한 장만 뽑으면 어느 쪽이든 같다. */
+  function renderSame() {
+    var box = el('div', 'field');
+    var label = el('span', 'field__label', '문제');
+    label.appendChild(el('span', 'field__note', '여러 장일 때'));
+    box.appendChild(label);
+    var row = el('div', 'choices choices--2');
+    [['장마다 다르게', false], ['모두 같게', true]].forEach(function (option) {
+      var node = button('choice', option[0], function () { state.same = option[1]; renderPanel(); });
+      node.setAttribute('aria-pressed', state.same === option[1] ? 'true' : 'false');
+      row.appendChild(node);
+    });
+    box.appendChild(row);
+    return box;
+  }
+
   /* 아직 뽑을 수 없는 이유를 한 문장으로. 뽑을 수 있으면 ''.
      꼭 넣어야 하는 칸이 비었는지만 본다. 나머지 검사는 서버가 한다. */
   function missing() {
@@ -554,7 +574,7 @@
     var row = el('div', 'sheets' + (job.sheets > 8 ? ' sheets--many' : ''));
     for (var n = 1; n <= job.sheets; n += 1) {
       var done = n <= job.done;
-      var now = !done && job.state === 'running' && n === job.done + 1;
+      var now = !done && job.state === 'running' && (job.same || n === job.done + 1);   // 같은 문제는 한꺼번에
       var sheet = el('div', 'sheet' + (done ? ' sheet--done' : now ? ' sheet--now' : ''));
       if (done) { sheet.appendChild(icon(ICON.check)); } else { sheet.textContent = String(n); }
       row.appendChild(sheet);
@@ -566,6 +586,7 @@
     if (!job) { return '키오스크에 보내는 중이에요'; }
     if (job.state === 'queued') { return '순서를 기다리는 중이에요'; }
     if (job.sheets === 1) { return '종이가 나오고 있어요'; }
+    if (job.same) { return '같은 문제 ' + job.sheets + '장을 뽑는 중이에요'; }   // 한 번에 다 뽑아서 몇 장째인지는 모른다
     return job.sheets + '장 중 ' + Math.min(job.sheets, job.done + 1) + '장째';
   }
 
@@ -668,7 +689,8 @@
     if (!jobActive()) { state.job = null; }
     renderAll();
     api('POST', '/api/print', {
-      content: contentName, mode: state.mode.id, values: collectValues(), sheets: state.mode.sheets ? state.sheets : 1
+      content: contentName, mode: state.mode.id, values: collectValues(), sheets: state.mode.sheets ? state.sheets : 1,
+      same: !!(state.mode.sheets && state.mode.same_sheets && state.same && state.sheets > 1)
     }).then(function (result) {
       if (result.status === 202) {
         state.job = result.data;
