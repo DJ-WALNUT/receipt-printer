@@ -84,6 +84,20 @@ def test_one_sheet_modes():
     assert CAT.contents["maimai"].wait_between == 5
 
 
+SAME = {("sudoku", "new"), ("futoshiki", "new"), ("nonogram", "new"), ("minesweeper", "new"),
+        ("maze", "new"), ("wordsearch", "new"), ("wordsearch", "custom"), ("spot", "new")}
+
+
+def test_same_sheets_modes():
+    found = {(c.name, m.id) for c in CAT.contents.values() for m in c.modes if m.same_sheets}
+    assert found == SAME
+
+
+def test_copies_runs_in_preview():
+    code, out, err = run_script("games/sudoku/sudoku.py", "--copies", "3")
+    assert code == 0 and "3장" in out, err
+
+
 SAMPLE = {"words": "나름,청소년,광명,동아리", "results": "설거지,청소", "names": ["민수", "지아", "하준"],
           "prize": "문화상품권", "manual": "3 11 17 24 38 42"}
 RUNNABLE = [(c.name, m.id) for c in CAT.contents.values() for m in c.modes if c.name != "maimai"]

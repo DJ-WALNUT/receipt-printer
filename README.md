@@ -85,6 +85,7 @@ python -m venv .venv
 ```powershell
 .venv\Scripts\python main.py                        # 메뉴에서 골라 실행
 .venv\Scripts\python main.py sudoku --level hard    # 이름 뒤에 그 콘텐츠의 옵션을 그대로 전달
+.venv\Scripts\python main.py sudoku --copies 4      # 같은 문제 네 장 (어느 콘텐츠에나 붙일 수 있다)
 .venv\Scripts\python main.py loot --loop
 .venv\Scripts\python main.py text text/examples/sample.txt --preview
 ```
@@ -122,6 +123,7 @@ id = "new"
 label = "새 판"
 # audience = "staff"      # 운영자(터미널, 키오스크 관리자 화면)에게만 보일 때. 기본은 "all"
 # sheets = false          # 항상 한 장만 뽑을 때
+# same_sheets = true     # "같은 문제로 여러 장" 선택지를 보일 때 (여럿이 같은 문제로 겨루는 퍼즐)
 # args = ["--super"]      # 이 갈래에서 항상 붙는 옵션
 
 [[mode.field]]            # 묻는 항목. 적힌 순서대로 묻는다
@@ -142,6 +144,7 @@ default = "medium"
 
 - 항목에도 `audience = "staff"`를 붙일 수 있다. 방문자에게는 그 항목이 없는 것처럼 동작한다.
 - 방문자가 글자를 직접 넣는 `text` 항목에는 반드시 `pattern`을 준다. 넣은 글자가 영수증에 찍히기 때문이다. `pattern`이 없으면 허브가 그 콘텐츠를 오류로 뺀다 (운영자만 쓰는 항목은 `audience = "staff"`).
+- 모드에 `same_sheets = true`를 적으면 여러 장을 뽑을 때 "장마다 다른 문제"와 "모두 같은 문제" 중에서 고를 수 있다. 같은 문제를 고르면 스크립트를 한 번만 `--copies <장 수>`로 실행해, 같은 이미지를 그만큼 인쇄한다. 스크립트는 고칠 것이 없다 (`receipt.add_output_args`가 `--copies`를 받는다).
 - 표에 없는 키를 쓰면 오타로 보고 그 콘텐츠를 오류로 뺀다. `audience`를 잘못 적어 운영자 전용 메뉴가 방문자에게 열리는 일을 막기 위해서다.
 - 묶음(`games/`, `fortune/`, `rhythm/`)의 제목과 순서는 그 폴더의 `group.toml`에 있다. 새 묶음은 폴더와 `group.toml`을 만들면 된다.
 
