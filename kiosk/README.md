@@ -58,6 +58,41 @@ ip -br addr
 iw dev wlan0 get power_save
 ```
 
+## 밖에서 접속하기 (Cloudflare Tunnel + Access)
+
+같은 공유기 밖에서도 `https://print.내도메인.com` 같은 주소로 열 수 있다. 파이가 Cloudflare로 먼저 연결을 걸기 때문에 공유기 설정이나 고정 IP가 필요 없다. 도메인이 Cloudflare 계정에 등록돼 있어야 한다 (네임서버가 Cloudflare).
+
+키오스크는 누구나 인쇄할 수 있게 만들어져 있으므로, **주소를 열기 전에 먼저 잠근다.** 순서를 바꾸면 잠그기 전까지 아무나 인쇄할 수 있다.
+
+**1. 잠그기 (Access)** — [Zero Trust 대시보드](https://one.dash.cloudflare.com)에서:
+
+1. Access → Applications → Add an application → Self-hosted.
+2. Application domain에 쓸 주소를 넣는다 (예: 하위 도메인 `print`, 도메인 `내도메인.com`). 경로는 비워 주소 전체를 잠근다.
+3. Session Duration은 로그인을 다시 묻는 주기다. 자주 쓰면 `1 month`.
+4. 정책을 하나 만든다: Action `Allow`, Include → `Emails`에 들어올 사람의 이메일을 적는다. 로그인 방법은 기본인 One-time PIN(이메일로 오는 6자리 숫자)이면 된다.
+
+**2. 터널 만들기** — 같은 대시보드에서:
+
+1. Networks → Tunnels → Create a tunnel → Cloudflared. 이름은 아무거나 (예: `receipt-kiosk`).
+2. 설치 명령이 나오는 화면에서 `cloudflared service install` 뒤의 `eyJ...` 토큰만 복사한다.
+3. 파이에서 실행하고 토큰을 붙여 넣는다.
+
+   ```bash
+   cd receipt-printer
+   bash deploy/setup-tunnel.sh
+   ```
+
+4. 대시보드로 돌아와 Public Hostname을 더한다: 1번에서 잠근 것과 같은 주소, Service는 `HTTP` / `localhost:80` (`KIOSK_PORT`를 바꿨으면 그 포트).
+
+**3. 확인** — 휴대폰의 와이파이를 끄고 주소를 연다. 키오스크가 아니라 Cloudflare의 이메일 입력 화면이 먼저 나와야 한다. 바로 키오스크가 뜨면 Access 주소와 Public Hostname 주소가 같은지 본다.
+
+알아 둘 것:
+
+- 같은 공유기 안에서는 전처럼 `http://djwalnut.local`로 로그인 없이 열린다. 현장의 아이패드는 이 주소를 그대로 쓴다.
+- Access를 지나온 사람은 방문자와 같다. 관리자 기능은 여전히 관리자 비밀번호가 있어야 한다.
+- 밖에서 여는 것을 멈추려면 파이에서 `sudo systemctl disable --now cloudflared`, 다시 열려면 `sudo systemctl enable --now cloudflared`.
+- 토큰은 이 파이를 터널에 연결할 수 있는 열쇠다. 저장소나 메신저에 남기지 않는다. 새어 나갔으면 대시보드에서 터널을 지우고 새로 만든다.
+
 ## 새 콘텐츠 올리기
 
 PC에서:
@@ -106,6 +141,7 @@ bash deploy/update.sh
 | 접속이 됐다 안 됐다 함, `.local` 주소만 안 열림 | 파이 와이파이의 절전이 켜져 있으면 생긴다. `iw dev wlan0 get power_save`가 `on`이면 `bash deploy/setup-pi.sh`를 다시 실행하거나 `sudo iw dev wlan0 set power_save off`로 끈다. 오래 켜 둘 키오스크는 랜선 연결이 가장 확실하다 |
 | 아이패드에서 접속이 안 됨 | 아이패드와 파이가 같은 공유기에 있는지. `.local` 이름이 안 풀리면 `hostname -I`로 나온 IP로 접속한다. 공유기에서 파이 IP를 고정해 두면 편하다 |
 | 센터 와이파이에서만 접속이 안 됨 | 기기끼리의 통신을 막아 둔 와이파이일 수 있다. 파이를 유선 랜으로 연결하거나 별도 공유기를 쓴다 |
+| 밖에서 여는 주소만 안 열림 (502, 1033 오류) | 파이에서 `systemctl status cloudflared`, 로그는 `journalctl -u cloudflared -e`. 대시보드의 터널이 HEALTHY인지, Public Hostname의 Service가 `HTTP` / `localhost:80`인지 본다 |
 | 화면이 "키오스크에 연결할 수 없습니다" | `systemctl status receipt-kiosk`, 로그는 `journalctl -u receipt-kiosk -e` |
 | 새 콘텐츠가 화면에 안 보임 | 설정 파일에 오류가 있으면 그 콘텐츠만 빠진다. 로그에 "설정 오류로 뺀 콘텐츠"가 있는지 본다 |
 | maimai 곡 제목의 한자가 빈 네모로 찍힘 | `fc-list | grep -i unifont`로 대체 글꼴이 설치됐는지 본다 (`sudo apt install fonts-unifont`) |
