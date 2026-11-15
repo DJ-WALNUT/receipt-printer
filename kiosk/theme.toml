@@ -2,7 +2,7 @@
 # 고친 뒤 키오스크를 다시 시작한다 (파이: sudo systemctl restart receipt-kiosk).
 # 값이 잘못되면 그 항목만 기본값으로 돌아간다.
 
-name = "영수증 뽑기"            # 화면 맨 위에 보이는 이름
+name = "도파민 박스"            # 화면 맨 위에 보이는 이름
 
 [colors]                        # "#RRGGBB" 형식
 board = "#FFD400"               # 판 바탕

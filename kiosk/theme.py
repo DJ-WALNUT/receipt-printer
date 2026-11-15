@@ -3,7 +3,7 @@ import re
 import tomllib
 from pathlib import Path
 
-DEFAULT_NAME = "영수증 뽑기"
+DEFAULT_NAME = "도파민 박스"
 DEFAULT_COLORS = {
     "board": "#FFD400", "board_shade": "#F2C200", "accent": "#E4002B",
     "select": "#1E3A8A", "ink": "#1A1A1A", "paper": "#FFFFFF",
