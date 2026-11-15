@@ -3,6 +3,7 @@
 사용법 (프로젝트 폴더에서):
     python main.py                        # 메뉴에서 골라 실행
     python main.py sudoku --level hard    # 콘텐츠 이름 뒤에 그 스크립트의 옵션을 그대로 전달
+    python main.py sudoku --copies 4      # 같은 문제 네 장
     python main.py loot --loop
     python main.py text text/examples/sample.txt --preview
     python main.py maimai myshft_id
@@ -117,22 +118,33 @@ def ask_sheets():
     return None
 
 
+def ask_same():
+    """여러 장을 모두 같은 문제로 뽑을지. Enter 는 아니오 (장마다 다른 문제)."""
+    return ask("같은 문제로 뽑을까요? 여럿이 같은 문제로 겨룰 때 (y/N) > ").lower() in ("y", "ㅛ")
+
+
 def run_from_menu(content, preview):
     print(f"\n[{content.title}]")
+    mode = None
     if content.name in CUSTOM_ASK:
         args, sheets = CUSTOM_ASK[content.name](content), True
     else:
         asked = ask_content(content)
-        args, sheets = (asked[0], asked[1].sheets) if asked else (None, False)
+        args, mode = asked if asked else (None, None)
+        sheets = bool(mode and mode.sheets)
     if args is None:
         return
     count = ask_sheets() if sheets else 1
     if count is None:
         return
+    flags = ["--preview"] if preview else []
+    if count > 1 and mode and mode.same_sheets and ask_same():
+        run(content, args + [hub.COPIES_ARG, str(count)] + flags)   # 한 번 만들어 같은 것을 여러 장 인쇄한다
+        return
     for i in range(count):  # 장마다 새로 실행하므로 퍼즐·뽑기는 장마다 다른 판이 나온다
         if i and content.wait_between:
             time.sleep(content.wait_between)
-        if run(content, args + (["--preview"] if preview else [])) != 0:
+        if run(content, args + flags) != 0:
             break
 
 
