@@ -1,4 +1,5 @@
 """인쇄 대기열. 작업을 한 번에 하나씩 꺼내, 장마다 콘텐츠 스크립트를 새 프로세스로 실행한다.
+"같은 문제 여러 장" 작업만은 스크립트를 한 번 실행해 같은 이미지를 장 수만큼 인쇄한다 (--copies).
 
 프린터가 한 대라서 작업자 스레드도 하나다. 방문자 작업은 한 번에 하나만 받고(나머지는 Busy),
 운영자 작업은 뒤에 쌓인다.
@@ -18,6 +19,7 @@ import hub
 
 KEEP_FINISHED = 50
 ACTIVE = ("queued", "running")
+COPY_SECONDS = 15   # 같은 문제 작업에서 한 장 더 인쇄할 때마다 늘리는 제한 시간
 
 MSG_TIMEOUT = "시간이 너무 오래 걸려 멈췄습니다. 다시 시도해 주세요."
 MSG_PRINTER = "프린터 연결을 확인해 주세요."
@@ -42,10 +44,11 @@ class Job:
     content: object = field(default=None, repr=False)
     args: list = field(default_factory=list, repr=False)
     cancel: bool = field(default=False, repr=False)
+    same: bool = False      # 모든 장을 같은 문제로 뽑는다 (스크립트를 한 번만 실행)
 
     def to_dict(self):
         return {"id": self.id, "title": self.title, "state": self.state,
-                "done": self.done, "sheets": self.sheets, "message": self.message}
+                "done": self.done, "sheets": self.sheets, "message": self.message, "same": self.same}
 
 
 def friendly(returncode, output):
@@ -91,11 +94,12 @@ class JobQueue:
 
     # ---- 바깥에서 부르는 것
 
-    def submit(self, content, args, sheets, role):
+    def submit(self, content, args, sheets, role, same=False):
         with self._wake:
             if role != hub.STAFF and any(j.role != hub.STAFF and j.state in ACTIVE for j in self._jobs.values()):
                 raise Busy()
-            job = Job(uuid.uuid4().hex[:12], content.title, role, sheets, content=content, args=list(args))
+            job = Job(uuid.uuid4().hex[:12], content.title, role, sheets, content=content, args=list(args),
+                      same=bool(same) and sheets > 1)
             self._jobs[job.id] = job
             self._queue.append(job)
             self._wake.notify()
@@ -150,7 +154,20 @@ class JobQueue:
 
     def _run(self, job):
         content = job.content
-        args = job.args + (["--preview"] if self.preview else [])
+        flags = ["--preview"] if self.preview else []
+        if job.same:
+            # 한 번 실행해 전부 인쇄한다. 도중에는 몇 장째인지 알 수 없고, 시작한 뒤에는 취소할 수 없다.
+            if job.cancel:
+                return "cancelled", ""
+            self._pace(content)
+            ok, message = self.runner(content.script, job.args + [hub.COPIES_ARG, str(job.sheets)] + flags,
+                                      self.timeout + COPY_SECONDS * (job.sheets - 1))
+            if not ok:
+                return "failed", message or MSG_UNKNOWN
+            with self._lock:
+                job.done = job.sheets
+            return "done", ""
+        args = job.args + flags
         for _ in range(job.sheets):
             if job.cancel:
                 return "cancelled", ""

@@ -13,7 +13,8 @@ def test_runs_each_sheet_and_finishes():
     wait(job, "done")
     assert job.done == 3 and len(r.calls) == 3
     assert r.calls[0][0].name == "thing.py" and r.calls[0][1] == ["--level", "hard"]
-    assert job.to_dict() == {"id": job.id, "title": "아무거나", "state": "done", "done": 3, "sheets": 3, "message": ""}
+    assert job.to_dict() == {"id": job.id, "title": "아무거나", "state": "done", "done": 3, "sheets": 3, "message": "",
+                             "same": False}
     assert q.get(job.id) is job and q.get("nope") is None
 
 
@@ -136,3 +137,38 @@ def test_run_script_reports_exit_message_and_success(tmp_path):
     good = tmp_path / "good.py"
     good.write_text('import sys; print("한글 출력", sys.argv[1:])', encoding="utf-8")
     assert run_script(good, ["--a", "가나"], timeout=30) == (True, "")
+
+
+# ---------------------------------------------------------------- 같은 문제 여러 장
+
+def test_same_job_runs_once_with_copies():
+    r = FakeRunner()
+    q = JobQueue(runner=r, preview=True, timeout=100)
+    job = q.submit(content(), ["--level", "hard"], 4, hub.VISITOR, same=True)
+    wait(job, "done")
+    assert len(r.calls) == 1 and job.done == 4
+    assert r.calls[0][1] == ["--level", "hard", "--copies", "4", "--preview"]
+    assert r.calls[0][2] == 100 + 15 * 3              # 장 수만큼 제한 시간을 늘린다
+    assert job.to_dict()["same"] is True
+
+
+def test_same_job_failure_is_reported_and_queue_continues():
+    r = FakeRunner(results=[(False, "프린터 연결을 확인해 주세요.")])
+    q = JobQueue(runner=r)
+    bad = q.submit(content(), [], 3, hub.STAFF, same=True)
+    nxt = q.submit(content(), [], 1, hub.STAFF)
+    wait(bad, "failed")
+    assert bad.done == 0 and "프린터" in bad.message
+    wait(nxt, "done")
+
+
+def test_cancel_before_start_skips_a_same_job():
+    r = FakeRunner(gate=True)
+    q = JobQueue(runner=r)
+    running = q.submit(content(), [], 1, hub.STAFF)
+    same = q.submit(content(), [], 3, hub.STAFF, same=True)
+    wait(running, "running")
+    q.cancel_all()
+    r.gate.set()
+    wait(running, "done")                             # 뽑던 한 장은 끝까지 뽑는다
+    assert same.state == "cancelled" and same.done == 0 and len(r.calls) == 1

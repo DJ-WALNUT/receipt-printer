@@ -217,3 +217,38 @@ def test_catalog_version_changes_when_the_server_restarts(client):
     first = client.get("/api/catalog").get_json()["version"]
     assert first and client.get("/api/catalog").get_json()["version"] == first
     assert make_client().get("/api/catalog").get_json()["version"] != first
+
+
+# ---------------------------------------------------------------- 같은 문제 여러 장
+
+def test_same_print_runs_once_with_copies(client):
+    r = client.post("/api/print", json={"content": "sudoku", "mode": "new", "values": {}, "sheets": 3, "same": True})
+    assert r.status_code == 202 and r.get_json()["same"] is True
+    job = poll(client, r.get_json()["id"], "done")
+    assert job["done"] == 3 and len(client.runner.calls) == 1
+    assert client.runner.calls[0][1] == ["--level", "medium", "--copies", "3"]
+
+
+def test_same_with_one_sheet_is_an_ordinary_job(client):
+    r = client.post("/api/print", json={"content": "sudoku", "mode": "new", "values": {}, "sheets": 1, "same": True})
+    assert r.status_code == 202 and r.get_json()["same"] is False
+    poll(client, r.get_json()["id"], "done")
+    assert client.runner.calls[0][1] == ["--level", "medium"]
+
+
+@pytest.mark.parametrize("body", [
+    {"content": "tarot", "mode": "new", "values": {}, "sheets": 2, "same": True},      # 받지 않는 모드
+    {"content": "sudoku", "mode": "new", "values": {}, "sheets": 5, "same": True},     # 방문자는 4장까지
+    {"content": "sudoku", "mode": "new", "values": {}, "sheets": 2, "same": "yes"},
+    {"content": "sudoku", "mode": "new", "values": {}, "sheets": 2, "same": 1},
+])
+def test_bad_same_requests_are_refused(client, body):
+    r = client.post("/api/print", json=body)
+    assert r.status_code == 400 and r.get_json()["error"]
+    assert client.runner.calls == []
+
+
+def test_catalog_marks_same_sheets_modes(client):
+    items = {i["name"]: i for i in all_items(client.get("/api/catalog").get_json()["menu"])}
+    assert [m["same_sheets"] for m in items["sudoku"]["modes"]] == [True, False]
+    assert not any(m["same_sheets"] for m in items["tarot"]["modes"])

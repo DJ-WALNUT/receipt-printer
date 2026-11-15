@@ -110,10 +110,11 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
             args = hub.build_args(content, mode_id, body.get("values"), who, nicknames)
             mode = next(m for m in content.modes if m.id == mode_id)
             sheets = hub.check_sheets(mode, body.get("sheets"), who)
+            same = hub.check_same(mode, body.get("same")) and sheets > 1   # 한 장이면 보통 작업과 같다
         except hub.HubError as e:
             return jsonify({"error": str(e), "field": e.field}), 400
         try:
-            job = queue.submit(content, args, sheets, who)
+            job = queue.submit(content, args, sheets, who, same=same)
         except Busy:
             return error("지금 다른 인쇄가 진행 중이에요. 잠시만 기다려 주세요.", 409)
         return jsonify(job.to_dict()), 202
