@@ -7,7 +7,7 @@ from conftest import ROOT
 
 sys.path.insert(0, str(ROOT / "games" / "oddchar"))
 import oddchar  # noqa: E402
-from receipt import PAPER_W, draw_run, size_style  # noqa: E402
+from receipt import CONTENT_W, PAPER_W, draw_run, size_style  # noqa: E402
 
 NUMBERS = [f"{level}{count}{100000 + k * 7919}" for level in "EMH" for count in "123" for k in range(20)]
 
@@ -32,20 +32,23 @@ def test_hidden_cells_hold_the_odd_char_and_do_not_touch(number):
             assert max(abs(r1 - r2), abs(c1 - c2)) >= 2
 
 
-def test_hard_uses_only_close_pairs():
-    close = {(a, b) for a, b, near in oddchar.PAIRS if near}
+def test_each_level_uses_only_pairs_that_look_almost_the_same_at_its_size():
+    for level in oddchar.LEVELS:
+        pairs = oddchar.close_pairs(level)
+        assert len(pairs) >= 8, level              # 판이 늘 같은 짝만 나오지 않게
+        height = oddchar.LEVELS[level][4]
+        for a, b in pairs:
+            assert 1 <= oddchar.dots_apart(a, b, height) <= oddchar.MAX_DOTS
+            assert draw_run(a, size_style(height, False)).tobytes() != draw_run(b, size_style(height, False)).tobytes()
     for number in NUMBERS:
-        if number[0] == "H":
-            base, odd = oddchar.make(number)[:2]
-            assert (base, odd) in close or (odd, base) in close   # 보통·어려움은 짝을 뒤집기도 한다
+        base, odd = oddchar.make(number)[:2]
+        assert (base, odd) in oddchar.close_pairs(number[0]) or (odd, base) in oddchar.close_pairs(number[0])
 
 
-def test_every_pair_looks_different_at_every_size():
-    for level in oddchar.LEVELS.values():
-        style = size_style(level[4], False)
-        for a, b, near in oddchar.PAIRS:
-            ra, rb = draw_run(a, style), draw_run(b, style)
-            assert ra.size != rb.size or ra.tobytes() != rb.tobytes(), (a, b, level[1])
+def test_glyphs_fit_their_cells():
+    for level, (_, _, cols, _, height) in oddchar.LEVELS.items():
+        glyph = draw_run("붕", size_style(height, False))
+        assert glyph.width < CONTENT_W // cols and glyph.height <= CONTENT_W // cols, level
 
 
 @pytest.mark.parametrize("level", list("EMH"))

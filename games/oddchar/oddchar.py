@@ -16,31 +16,50 @@ import random
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))  # 공용 모듈 receipt.py
-from receipt import CONTENT_W, PAPER_W, add_output_args, draw_run, output, render, size_style, stack, strip_seed
+from receipt import CONTENT_W, PAPER_W, SIZES, add_output_args, draw_run, output, render, size_style, stack, strip_seed
 
 SEED_PREFIX = "G"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 
 LEVELS = {  # 글자: (이름, 표시, 가로 칸, 세로 칸, 글자 높이)
-    "E": ("easy", "쉬움", 10, 12, 48),
-    "M": ("medium", "보통", 14, 18, 36),
-    "H": ("hard", "어려움", 18, 26, 24),
+    "E": ("easy", "쉬움", 16, 22, 24),
+    "M": ("medium", "보통", 22, 30, 20),
+    "H": ("hard", "어려움", 28, 40, 16),
 }
+MAX_DOTS = 6   # 이 크기에서 이만큼 이하로 다른 짝만 쓴다 (원래 글꼴 픽셀 기준)
 
-# (바탕 글자, 숨은 글자, 아주 닮았는지). 어려움은 아주 닮은 짝만 쓴다.
+# (바탕 글자, 숨은 글자). 아주 닮은 짝 후보. 크기마다 글꼴이 달라 닮은 정도도 달라지므로,
+# 난이도마다 그 글자 크기에서 MAX_DOTS 이하로 다른 짝만 골라 쓴다 (close_pairs).
 # 순서를 바꾸거나 중간에 끼우면 예전 시드번호가 다른 판이 된다. 새 짝은 맨 뒤에 추가한다.
 PAIRS = [
-    ("6", "8", True), ("9", "8", True), ("3", "8", True), ("5", "6", True), ("0", "8", True), ("1", "7", False),
-    ("O", "Q", True), ("E", "F", True), ("P", "R", True), ("C", "G", True), ("M", "N", False), ("b", "d", False),
-    ("p", "q", False), ("U", "V", True), ("V", "W", False),
-    ("ㅂ", "ㅍ", False), ("ㅏ", "ㅓ", False), ("ㅗ", "ㅜ", False), ("ㅈ", "ㅊ", True), ("ㄱ", "ㅋ", True),
-    ("ㄷ", "ㅌ", True), ("ㅁ", "ㅂ", True), ("ㅇ", "ㅎ", True), ("ㅐ", "ㅔ", True),
-    ("물", "몰", True), ("빛", "빚", True), ("곰", "공", True), ("밤", "방", True), ("달", "닭", True),
-    ("굴", "귤", True), ("복", "북", True), ("개", "게", True), ("웃", "옷", True), ("입", "잎", True),
-    ("감", "강", True), ("왕", "웡", True),
+    ("물", "몰"), ("복", "북"), ("굴", "귤"), ("웃", "옷"), ("감", "강"), ("곰", "공"), ("밤", "방"),
+    ("붕", "봉"), ("갈", "걀"), ("혼", "훈"), ("별", "벌"), ("털", "덜"),
+    ("O", "Q"), ("P", "R"), ("E", "F"), ("C", "G"), ("I", "l"), ("3", "8"),
 ]
+
+
+def dots_apart(a, b, height):
+    """두 글자를 같은 자리에 겹쳐 그렸을 때 다른 점 수 (원래 글꼴 픽셀 기준, 0이면 똑같이 보인다)."""
+    style, scale = size_style(height, False), SIZES[height][2]
+    ra, rb = draw_run(a, style), draw_run(b, style)
+    w, h = max(ra.width, rb.width), max(ra.height, rb.height)
+    ca, cb = Image.new("1", (w, h), 1), Image.new("1", (w, h), 1)
+    ca.paste(ra, (0, 0))
+    cb.paste(rb, (0, 0))
+    return ImageChops.logical_xor(ca, cb).histogram()[255] // (scale * scale)
+
+
+_close = {}
+
+
+def close_pairs(level):
+    """그 난이도의 글자 크기에서 1~MAX_DOTS 점만 다른 짝 (PAIRS 순서 그대로)."""
+    if level not in _close:
+        height = LEVELS[level][4]
+        _close[level] = [p for p in PAIRS if 1 <= dots_apart(*p, height) <= MAX_DOTS]
+    return _close[level]
 
 
 def make(number):
@@ -48,8 +67,7 @@ def make(number):
     level, count = number[0], int(number[1])
     cols, rows = LEVELS[level][2:4]
     rng = random.Random(number)
-    pairs = [p for p in PAIRS if p[2]] if level == "H" else PAIRS
-    base, odd, _ = rng.choice(pairs)
+    base, odd = rng.choice(close_pairs(level))
     if rng.random() < 0.5 and level != "E":   # 보통·어려움은 짝을 거꾸로도 쓴다 (8 사이의 6)
         base, odd = odd, base
     spots = []
