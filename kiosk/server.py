@@ -30,17 +30,20 @@ IMAGE_NAME = re.compile(r"(\d{8})_(\d{6})(?:_(.+))?\.png")   # receipt.save_outp
 log = logging.getLogger("kiosk")
 
 
-def cleanup_outputs(root: Path, days: float) -> int:
-    """콘텐츠 폴더의 output/ 에 쌓인 이미지 중 days일보다 오래된 것을 지운다. 지운 개수를 돌려준다."""
-    cutoff = time.time() - days * 86400
-    removed = 0
+def output_images(root: Path) -> list:
+    """콘텐츠 폴더들의 output/ 에 있는 이미지 경로 전부."""
     # 콘텐츠 폴더는 깊이 1~2 에만 있다. 저장소 전체(.git, .venv)를 훑지 않는다.
     found = list(Path(root).glob("*/output/*.png")) + list(Path(root).glob("*/*/output/*.png"))
-    for path in found:
-        if path.parts[len(Path(root).parts)].startswith("."):
-            continue
+    return [p for p in found if not p.parts[len(Path(root).parts)].startswith(".")]
+
+
+def cleanup_outputs(root: Path, days: float) -> int:
+    """콘텐츠 폴더의 output/ 에 쌓인 이미지 중 days일보다 오래된 것을 지운다 (0이면 전부). 지운 개수를 돌려준다."""
+    cutoff = time.time() - days * 86400
+    removed = 0
+    for path in output_images(root):
         try:
-            if path.stat().st_mtime < cutoff:
+            if days <= 0 or path.stat().st_mtime < cutoff:
                 path.unlink()
                 removed += 1
         except OSError:
