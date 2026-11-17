@@ -10,7 +10,7 @@ from conftest import ROOT, run_script
 PUZZLES = {"games/sudoku/sudoku.py": "S", "games/futoshiki/futoshiki.py": "F",
            "games/minesweeper/minesweeper.py": "M", "games/maze/maze.py": "Z",
            "games/nonogram/nonogram.py": "N", "games/wordsearch/wordsearch.py": "W",
-           "games/spot/spot.py": "D"}
+           "games/spot/spot.py": "D", "games/oddchar/oddchar.py": "G"}
 DRAWS = {"fortune/loot/loot.py": "L", "fortune/tarot/tarot.py": "T"}
 
 

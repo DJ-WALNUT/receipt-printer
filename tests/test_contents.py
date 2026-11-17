@@ -1,4 +1,4 @@
-"""저장소의 실제 content.toml 18개가 계획대로 읽히고, 모든 모드가 실제로 실행된다."""
+"""저장소의 실제 content.toml 19개가 계획대로 읽히고, 모든 모드가 실제로 실행된다."""
 import pytest
 
 import hub
@@ -9,17 +9,17 @@ NICK = ["토끼", "여우", "수달", "펭귄"]
 DEFAULTS = {  # 터미널 메뉴에서 Enter만 눌렀을 때와 같은 종류의 판
     "sudoku": ["--level", "medium"], "futoshiki": ["--level", "medium"], "minesweeper": ["--level", "medium"],
     "maze": ["--level", "medium"], "nonogram": ["--level", "easy"], "wordsearch": ["--level", "medium"],
-    "spot": ["--count", "5"], "omok": ["--size", "15"], "dots": ["--size", "8"], "tictactoe": ["--boards", "6"],
+    "spot": ["--count", "5"], "oddchar": ["--level", "medium", "--count", "1"], "omok": ["--size", "15"], "dots": ["--size", "8"], "tictactoe": ["--boards", "6"],
     "bingo": ["--size", "5"], "hangman": ["--lang", "ko", "--slots", "10"], "loot": [], "lotto": ["--games", "5"],
     "tarot": [],
 }
 SEEDS = {"sudoku": "S", "futoshiki": "F", "minesweeper": "M", "maze": "Z", "nonogram": "N",
-         "wordsearch": "W", "spot": "D", "loot": "L", "tarot": "T"}
+         "wordsearch": "W", "spot": "D", "oddchar": "G", "loot": "L", "tarot": "T"}
 
 
-def test_all_eighteen_load_without_errors():
+def test_all_nineteen_load_without_errors():
     assert CAT.errors == ()
-    assert len(CAT.contents) == 18
+    assert len(CAT.contents) == 19
 
 
 def test_menu_order():
@@ -28,7 +28,7 @@ def test_menu_order():
     assert menu[1][0].title == "고전게임" and menu[2][0].title == "오늘의 운세"
     assert menu[3][0].title == "리듬게임" and [c.name for c in menu[3][1]] == ["maimai"]
     assert [c.name for c in menu[1][1]] == ["sudoku", "futoshiki", "nonogram", "minesweeper", "maze", "wordsearch",
-                                             "spot", "omok", "dots", "tictactoe", "bingo", "ladder", "hangman"]
+                                             "spot", "oddchar", "omok", "dots", "tictactoe", "bingo", "ladder", "hangman"]
     assert [c.name for c in menu[2][1]] == ["loot", "lotto", "tarot"]
 
 
@@ -79,13 +79,14 @@ def test_one_sheet_modes():
     one = {(c.name, m.id) for c in CAT.contents.values() for m in c.modes if not m.sheets}
     assert one == {("sudoku", "answer"), ("futoshiki", "answer"), ("minesweeper", "answer"), ("maze", "answer"),
                    ("nonogram", "answer"), ("wordsearch", "answer"), ("wordsearch", "answer_custom"),
-                   ("spot", "answer"), ("ladder", "new"), ("loot", "again"), ("lotto", "draw"), ("tarot", "again"),
+                   ("spot", "answer"), ("oddchar", "answer"), ("ladder", "new"), ("loot", "again"), ("lotto", "draw"), ("tarot", "again"),
                    ("maimai", "new"), ("maimai", "all")}
     assert CAT.contents["maimai"].wait_between == 5
 
 
 SAME = {("sudoku", "new"), ("futoshiki", "new"), ("nonogram", "new"), ("minesweeper", "new"),
-        ("maze", "new"), ("wordsearch", "new"), ("wordsearch", "custom"), ("spot", "new")}
+        ("maze", "new"), ("wordsearch", "new"), ("wordsearch", "custom"), ("spot", "new"),
+        ("oddchar", "new")}
 
 
 def test_same_sheets_modes():

@@ -58,7 +58,7 @@ def test_catalog_for_visitor(client):
     d = client.get("/api/catalog").get_json()
     assert d["role"] == "visitor" and d["max_sheets"] == 4 and d["admin_enabled"] is True
     items = {i["name"]: i for i in all_items(d["menu"])}
-    assert "text" not in items and len(items) == 17
+    assert "text" not in items and len(items) == 18
     assert [m["id"] for m in items["bingo"]["modes"]] == ["new"]
     pick = items["ladder"]["modes"][0]["fields"][0]
     assert pick["type"] == "pick" and len(pick["options"]) == 20 and "호랑이" in pick["options"]
