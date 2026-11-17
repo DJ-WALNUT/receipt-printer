@@ -4,3 +4,4 @@ output/
 .pytest_cache/
 .claude/
 rhythm/sdvx/test/
+kiosk/data/

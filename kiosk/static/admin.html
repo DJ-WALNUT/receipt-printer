@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>관리 페이지</title>
+<link rel="stylesheet" href="/theme.css">
+<link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+<header class="top">
+  <h1 class="top__title"><span id="kioskName">키오스크</span> 관리</h1>
+  <nav class="tabs" id="tabs" hidden>
+    <button type="button" class="tab" data-tab="stats" aria-pressed="true">이용실적</button>
+    <button type="button" class="tab" data-tab="images" aria-pressed="false">이미지</button>
+  </nav>
+  <div class="top__right">
+    <a class="link" href="/">키오스크로</a>
+    <button type="button" class="link" id="logout" hidden>로그아웃</button>
+  </div>
+</header>
+
+<main class="main">
+  <section id="login" class="card login" hidden>
+    <h2>관리자 비밀번호</h2>
+    <form id="loginForm">
+      <input id="pin" class="input" type="password" inputmode="numeric" autocomplete="off" maxlength="8"
+             aria-label="관리자 비밀번호" placeholder="비밀번호">
+      <button type="submit" class="button button--primary">들어가기</button>
+    </form>
+    <p class="notice" id="loginNotice" role="alert" hidden></p>
+  </section>
+
+  <section id="stats" hidden>
+    <div class="card filters">
+      <div class="presets" id="presets">
+        <button type="button" class="chip" data-days="1">오늘</button>
+        <button type="button" class="chip" data-days="7">최근 7일</button>
+        <button type="button" class="chip" data-days="30">최근 30일</button>
+        <button type="button" class="chip" data-month="0">이번 달</button>
+        <button type="button" class="chip" data-month="-1">지난 달</button>
+      </div>
+      <div class="range">
+        <label>시작 <input class="input input--date" type="date" id="from"></label>
+        <label>끝 <input class="input input--date" type="date" id="to"></label>
+        <button type="button" class="button" id="apply">보기</button>
+        <a class="button button--primary" id="csv" href="#">CSV 내려받기</a>
+      </div>
+    </div>
+    <p class="notice" id="statsNotice" role="alert" hidden></p>
+    <div class="tiles" id="tiles"></div>
+    <div class="columns">
+      <div class="card">
+        <h2>콘텐츠별</h2>
+        <table class="table" id="byContent"></table>
+      </div>
+      <div class="card">
+        <h2>날짜별</h2>
+        <table class="table" id="byDate"></table>
+      </div>
+    </div>
+    <p class="hint">실적은 인쇄 작업이 끝날 때마다 기록됩니다. 장 수는 실제로 인쇄된 장 수입니다.</p>
+  </section>
+
+  <section id="images" hidden>
+    <div class="card filters">
+      <div class="range">
+        <label>콘텐츠 <select class="input" id="imgContent"></select></label>
+        <label>날짜 <input class="input input--date" type="date" id="imgDate"></label>
+        <button type="button" class="button" id="imgClear">전체 날짜</button>
+      </div>
+      <p class="hint" id="imgCount"></p>
+    </div>
+    <div class="gallery" id="gallery"></div>
+    <div class="more"><button type="button" class="button" id="imgMore" hidden>더 보기</button></div>
+  </section>
+</main>
+
+<div class="viewer" id="viewer" hidden>
+  <div class="viewer__box" role="dialog" aria-modal="true" aria-labelledby="viewerTitle">
+    <div class="viewer__head">
+      <div>
+        <h2 id="viewerTitle"></h2>
+        <p class="hint" id="viewerMeta"></p>
+      </div>
+      <div class="viewer__buttons">
+        <a class="button" id="viewerOpen" target="_blank" rel="noopener">새 탭에서 열기</a>
+        <button type="button" class="button button--danger" id="viewerDelete">삭제</button>
+        <button type="button" class="button" id="viewerClose">닫기</button>
+      </div>
+    </div>
+    <div class="viewer__scroll"><img id="viewerImg" alt=""></div>
+  </div>
+</div>
+
+<script src="/static/admin.js"></script>
+</body>
+</html>

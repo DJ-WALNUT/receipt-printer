@@ -868,6 +868,7 @@
     });
     cancel.disabled = true;
     buttons.appendChild(cancel);
+    buttons.appendChild(button('plain', '관리 페이지', function () { window.location.href = '/admin'; }));
     buttons.appendChild(button('plain', '닫기', closeOverlay));
     box.appendChild(buttons);
 

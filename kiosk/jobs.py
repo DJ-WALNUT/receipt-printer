@@ -4,6 +4,7 @@
 프린터가 한 대라서 작업자 스레드도 하나다. 방문자 작업은 한 번에 하나만 받고(나머지는 Busy),
 운영자 작업은 뒤에 쌓인다.
 """
+import logging
 import os
 import re
 import subprocess
@@ -45,6 +46,7 @@ class Job:
     args: list = field(default_factory=list, repr=False)
     cancel: bool = field(default=False, repr=False)
     same: bool = False      # 모든 장을 같은 문제로 뽑는다 (스크립트를 한 번만 실행)
+    mode: str = ""          # 어떤 모드로 뽑았는지 (이용실적 기록용)
 
     def to_dict(self):
         return {"id": self.id, "title": self.title, "state": self.state,
@@ -79,8 +81,9 @@ def run_script(script: Path, args: list, timeout: float):
 
 
 class JobQueue:
-    def __init__(self, runner=run_script, preview=False, timeout=180, sleep=time.sleep):
+    def __init__(self, runner=run_script, preview=False, timeout=180, sleep=time.sleep, on_finish=None):
         self.runner = runner
+        self.on_finish = on_finish   # 작업이 끝나면(성공·실패·취소) on_finish(job). 이용실적 기록용
         self.preview = preview
         self.timeout = timeout
         self.sleep = sleep
@@ -94,12 +97,12 @@ class JobQueue:
 
     # ---- 바깥에서 부르는 것
 
-    def submit(self, content, args, sheets, role, same=False):
+    def submit(self, content, args, sheets, role, same=False, mode=""):
         with self._wake:
             if role != hub.STAFF and any(j.role != hub.STAFF and j.state in ACTIVE for j in self._jobs.values()):
                 raise Busy()
             job = Job(uuid.uuid4().hex[:12], content.title, role, sheets, content=content, args=list(args),
-                      same=bool(same) and sheets > 1)
+                      same=bool(same) and sheets > 1, mode=mode)
             self._jobs[job.id] = job
             self._queue.append(job)
             self._wake.notify()
@@ -116,16 +119,19 @@ class JobQueue:
     def cancel_all(self):
         """대기 작업은 바로 취소하고, 인쇄 중인 작업은 지금 장까지만 뽑고 멈춘다. 손댄 작업 수를 돌려준다."""
         with self._lock:
-            touched = 0
+            touched, dropped = 0, []
             for job in self._jobs.values():
                 if job.state == "queued":
                     job.state = "cancelled"
+                    dropped.append(job)
                     touched += 1
                 elif job.state == "running" and not job.cancel:
                     job.cancel = True
                     touched += 1
             self._queue.clear()
-            return touched
+        for job in dropped:
+            self._finished(job)
+        return touched
 
     def close(self):
         with self._wake:
@@ -151,6 +157,16 @@ class JobQueue:
                 job.message = message   # 상태보다 먼저: 화면이 "failed"를 본 순간 이유도 있어야 한다
                 job.state = state
                 self._prune()
+            self._finished(job)
+
+    def _finished(self, job):
+        """끝난 작업을 알린다. 기록이 실패해도 대기열은 멈추지 않는다."""
+        if self.on_finish is None:
+            return
+        try:
+            self.on_finish(job)
+        except Exception:
+            logging.getLogger("kiosk").exception("이용실적을 기록하지 못했습니다")
 
     def _run(self, job):
         content = job.content

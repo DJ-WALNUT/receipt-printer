@@ -18,6 +18,14 @@ def make_client(pin="1234", gate=False):
     return client
 
 
+@pytest.fixture(autouse=True)
+def usage_in_tmp(tmp_path, monkeypatch):
+    """테스트가 진짜 이용실적 파일(kiosk/data/usage.csv)에 쓰지 않게 한다."""
+    path = tmp_path / "usage.csv"
+    monkeypatch.setattr("kiosk.server.USAGE_PATH", path)
+    return path
+
+
 @pytest.fixture
 def client():
     return make_client()

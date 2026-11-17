@@ -3,8 +3,10 @@
 화면(static/)은 /api/catalog 가 주는 메뉴만으로 그려진다. 콘텐츠를 추가해도 이 파일과 화면은 고치지 않는다.
 무엇을 뽑을 수 있는지는 전부 hub.py 가 정한다. 여기서는 요청을 hub 에 넘기고 결과를 돌려줄 뿐이다.
 """
+import datetime
 import hmac
 import logging
+import re
 import secrets
 import time
 from pathlib import Path
@@ -14,11 +16,16 @@ from flask import Flask, Response, abort, jsonify, request, send_from_directory,
 import hub
 from kiosk.jobs import Busy, JobQueue
 from kiosk.theme import load_theme, theme_css
+from kiosk.usage import UsageLog, summarize
 
 HERE = Path(__file__).resolve().parent
 STAFF_IDLE = 5 * 60        # 운영자 세션이 이만큼 쉬면 방문자로 돌아간다 (초)
 LOGIN_TRIES = 5            # 비밀번호를 이만큼 틀리면
 LOGIN_LOCK = 60            # 이만큼 로그인을 막는다 (초)
+USAGE_PATH = HERE / "data" / "usage.csv"   # 이용실적 기록 (저장소에 올리지 않는다)
+STATS_DAYS = 30            # 관리 페이지에서 기간을 안 고르면 최근 이만큼
+IMAGE_PAGE = 60            # 이미지 목록 한 번에 보여 줄 개수
+IMAGE_NAME = re.compile(r"(\d{8})_(\d{6})(?:_(.+))?\.png")   # receipt.save_output 이 만드는 이름
 
 log = logging.getLogger("kiosk")
 
@@ -42,12 +49,16 @@ def cleanup_outputs(root: Path, days: float) -> int:
 
 
 def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path = hub.ROOT,
-               secret: str | None = None, theme_path: Path | None = None) -> Flask:
+               secret: str | None = None, theme_path: Path | None = None,
+               usage_path: Path | None = None) -> Flask:
     app = Flask(__name__, static_folder=str(HERE / "static"), static_url_path="/static")
     app.secret_key = secret or secrets.token_hex(32)
     app.json.ensure_ascii = False
 
     queue = queue or JobQueue()
+    usage = UsageLog(usage_path or USAGE_PATH)
+    if queue.on_finish is None:
+        queue.on_finish = usage.record
     catalog = hub.load(root)
     nicknames = hub.load_nicknames(HERE / "nicknames.txt")
     theme = load_theme(theme_path or HERE / "theme.toml")
@@ -114,7 +125,7 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
         except hub.HubError as e:
             return jsonify({"error": str(e), "field": e.field}), 400
         try:
-            job = queue.submit(content, args, sheets, who, same=same)
+            job = queue.submit(content, args, sheets, who, same=same, mode=mode_id)
         except Busy:
             return error("지금 다른 인쇄가 진행 중이에요. 잠시만 기다려 주세요.", 409)
         return jsonify(job.to_dict()), 202
@@ -157,6 +168,113 @@ def create_app(queue: JobQueue | None = None, pin: str | None = None, root: Path
     def admin_cancel():
         staff_only()
         return jsonify({"cancelled": queue.cancel_all()})
+
+    # ------------------------------------------------------------ 관리 페이지
+
+    @app.get("/admin")
+    def admin_page():
+        return send_from_directory(app.static_folder, "admin.html")
+
+    @app.get("/api/admin/me")
+    def admin_me():
+        return jsonify({"role": role(), "admin_enabled": bool(pin), "name": theme["name"]})
+
+    def period():
+        """?from=YYYY-MM-DD&to=YYYY-MM-DD. 없으면 최근 STATS_DAYS일. 잘못되면 400."""
+        today = datetime.date.today()
+        try:
+            end = datetime.date.fromisoformat(request.args.get("to") or today.isoformat())
+            start = datetime.date.fromisoformat(request.args.get("from")
+                                                or (end - datetime.timedelta(days=STATS_DAYS - 1)).isoformat())
+        except ValueError:
+            abort(400)
+        if start > end or (end - start).days > 366 * 3:
+            abort(400)
+        return start, end
+
+    @app.get("/api/admin/stats")
+    def admin_stats():
+        staff_only()
+        start, end = period()
+        return jsonify(summarize(usage.rows(start, end), start, end))
+
+    @app.get("/api/admin/usage.csv")
+    def admin_usage_csv():
+        staff_only()
+        start, end = period()
+        name = f"usage_{start:%Y%m%d}-{end:%Y%m%d}.csv"
+        return Response(usage.csv_text(start, end), mimetype="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+    def output_dir(name):
+        content = catalog.contents.get(name)
+        if content is None:
+            abort(404)
+        return content.script.parent / "output"
+
+    def image_info(content, path):
+        match = IMAGE_NAME.fullmatch(path.name)
+        if not match:
+            return None
+        day, clock, tag = match.groups()
+        try:
+            when = datetime.datetime.strptime(day + clock, "%Y%m%d%H%M%S")
+        except ValueError:
+            return None
+        return {"content": content.name, "title": content.title, "file": path.name, "tag": tag or "",
+                "time": when.strftime("%Y-%m-%d %H:%M:%S"), "date": when.date().isoformat()}
+
+    @app.get("/api/admin/images")
+    def admin_images():
+        """?content=이름&date=YYYY-MM-DD&offset=0. 최근 것부터 IMAGE_PAGE개씩."""
+        staff_only()
+        wanted, day = request.args.get("content") or None, request.args.get("date") or None
+        try:
+            offset = max(0, int(request.args.get("offset") or 0))
+        except ValueError:
+            abort(400)
+        found, counts = [], {}
+        for content in catalog.contents.values():
+            folder = content.script.parent / "output"
+            if not folder.is_dir():
+                continue
+            for path in folder.glob("*.png"):
+                info = image_info(content, path)
+                if info is None or (day and info["date"] != day):
+                    continue
+                counts[content.name] = counts.get(content.name, 0) + 1
+                if wanted is None or wanted == content.name:
+                    found.append(info)
+        found.sort(key=lambda i: (i["time"], i["file"]), reverse=True)
+        contents = [{"name": c.name, "title": c.title, "count": counts.get(c.name, 0)}
+                    for c in sorted(catalog.contents.values(), key=lambda c: c.title)]
+        return jsonify({"total": len(found), "offset": offset, "images": found[offset:offset + IMAGE_PAGE],
+                        "contents": contents})
+
+    @app.get("/api/admin/images/<name>/<file>")
+    def admin_image(name, file):
+        staff_only()
+        if not IMAGE_NAME.fullmatch(file):
+            abort(404)
+        return send_from_directory(output_dir(name), file, max_age=3600)
+
+    @app.delete("/api/admin/images/<name>/<file>")
+    def admin_image_delete(name, file):
+        staff_only()
+        if not IMAGE_NAME.fullmatch(file):
+            abort(404)
+        path = output_dir(name) / file
+        if not path.is_file():
+            abort(404)
+        try:
+            path.unlink()
+        except OSError:
+            return error("이미지를 지우지 못했어요. 잠시 뒤에 다시 해 주세요.", 409)
+        return jsonify({"deleted": file})
+
+    @app.errorhandler(400)
+    def bad_request(e):
+        return error("요청 값이 올바르지 않습니다.", 400)
 
     @app.errorhandler(403)
     @app.errorhandler(404)
