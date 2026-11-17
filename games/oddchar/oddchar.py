@@ -24,9 +24,9 @@ from receipt import CONTENT_W, PAPER_W, SIZES, add_output_args, draw_run, output
 SEED_PREFIX = "G"  # 시드번호 맨 앞 글자. 콘텐츠마다 다르다.
 
 LEVELS = {  # 글자: (이름, 표시, 가로 칸, 세로 칸, 글자 높이)
-    "E": ("easy", "쉬움", 16, 22, 24),
-    "M": ("medium", "보통", 22, 30, 20),
-    "H": ("hard", "어려움", 28, 40, 16),
+    "E": ("easy", "쉬움", 14, 18, 30),
+    "M": ("medium", "보통", 18, 26, 24),
+    "H": ("hard", "어려움", 22, 32, 20),
 }
 MAX_DOTS = 6   # 이 크기에서 이만큼 이하로 다른 짝만 쓴다 (원래 글꼴 픽셀 기준)
 
