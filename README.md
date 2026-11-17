@@ -35,6 +35,7 @@ fortune/             오늘의 운세
   loot/              전리품 뽑기 (TRPG)
   lotto/             나름로또 (나름청소년활동센터 체험용 복권)
   tarot/             오늘의 타로 (도트 카드 그림 + 운세)
+  omikuji/           오미쿠지 (한자·한글 등급 + 항목별 운세)
 
 rhythm/              리듬게임
   maimai/            maimai 레이팅 영수증 (maishift 프로필)

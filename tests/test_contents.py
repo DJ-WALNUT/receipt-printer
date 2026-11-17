@@ -1,4 +1,4 @@
-"""저장소의 실제 content.toml 19개가 계획대로 읽히고, 모든 모드가 실제로 실행된다."""
+"""저장소의 실제 content.toml 20개가 계획대로 읽히고, 모든 모드가 실제로 실행된다."""
 import pytest
 
 import hub
@@ -11,15 +11,15 @@ DEFAULTS = {  # 터미널 메뉴에서 Enter만 눌렀을 때와 같은 종류�
     "maze": ["--level", "medium"], "nonogram": ["--level", "easy"], "wordsearch": ["--level", "medium"],
     "spot": ["--count", "5"], "oddchar": ["--level", "medium", "--count", "1"], "omok": ["--size", "15"], "dots": ["--size", "8"], "tictactoe": ["--boards", "6"],
     "bingo": ["--size", "5"], "hangman": ["--lang", "ko", "--slots", "10"], "loot": [], "lotto": ["--games", "5"],
-    "tarot": [],
+    "tarot": [], "omikuji": [],
 }
 SEEDS = {"sudoku": "S", "futoshiki": "F", "minesweeper": "M", "maze": "Z", "nonogram": "N",
-         "wordsearch": "W", "spot": "D", "oddchar": "G", "loot": "L", "tarot": "T"}
+         "wordsearch": "W", "spot": "D", "oddchar": "G", "loot": "L", "tarot": "T", "omikuji": "O"}
 
 
-def test_all_nineteen_load_without_errors():
+def test_all_twenty_load_without_errors():
     assert CAT.errors == ()
-    assert len(CAT.contents) == 19
+    assert len(CAT.contents) == 20
 
 
 def test_menu_order():
@@ -29,7 +29,7 @@ def test_menu_order():
     assert menu[3][0].title == "리듬게임" and [c.name for c in menu[3][1]] == ["maimai"]
     assert [c.name for c in menu[1][1]] == ["sudoku", "futoshiki", "nonogram", "minesweeper", "maze", "wordsearch",
                                              "spot", "oddchar", "omok", "dots", "tictactoe", "bingo", "ladder", "hangman"]
-    assert [c.name for c in menu[2][1]] == ["loot", "lotto", "tarot"]
+    assert [c.name for c in menu[2][1]] == ["loot", "lotto", "tarot", "omikuji"]
 
 
 def test_seed_prefixes_match_the_scripts():
@@ -79,7 +79,7 @@ def test_one_sheet_modes():
     one = {(c.name, m.id) for c in CAT.contents.values() for m in c.modes if not m.sheets}
     assert one == {("sudoku", "answer"), ("futoshiki", "answer"), ("minesweeper", "answer"), ("maze", "answer"),
                    ("nonogram", "answer"), ("wordsearch", "answer"), ("wordsearch", "answer_custom"),
-                   ("spot", "answer"), ("oddchar", "answer"), ("ladder", "new"), ("loot", "again"), ("lotto", "draw"), ("tarot", "again"),
+                   ("spot", "answer"), ("oddchar", "answer"), ("ladder", "new"), ("loot", "again"), ("lotto", "draw"), ("tarot", "again"), ("omikuji", "again"),
                    ("maimai", "new"), ("maimai", "all")}
     assert CAT.contents["maimai"].wait_between == 5
 
