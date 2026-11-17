@@ -175,7 +175,7 @@ def test_theme_css_and_kiosk_name_come_from_theme_file(client):
     assert css.status_code == 200 and css.mimetype == "text/css"
     text = css.get_data(as_text=True)
     assert "--board: #FFD400;" in text and "--accent: #E4002B;" in text and "--font-display:" in text
-    assert client.get("/api/catalog").get_json()["name"] == "영수증 뽑기"
+    assert client.get("/api/catalog").get_json()["name"] == "도파민 박스"
 
 
 def test_custom_theme_overrides_and_unsafe_values_fall_back(tmp_path):
@@ -195,7 +195,7 @@ def test_missing_or_broken_theme_file_uses_defaults(tmp_path):
     for path in (broken, tmp_path / "none.toml"):
         c = create_app(queue=JobQueue(runner=FakeRunner()), pin=None, theme_path=path).test_client()
         assert "--board: #FFD400;" in c.get("/theme.css").get_data(as_text=True)
-        assert c.get("/api/catalog").get_json()["name"] == "영수증 뽑기"
+        assert c.get("/api/catalog").get_json()["name"] == "도파민 박스"
 
 
 def test_error_says_which_field(client):

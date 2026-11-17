@@ -25,7 +25,7 @@ def test_all_twenty_load_without_errors():
 def test_menu_order():
     menu = CAT.menu()
     assert menu[0].name == "text"
-    assert menu[1][0].title == "고전게임" and menu[2][0].title == "오늘의 운세"
+    assert menu[1][0].title == "고전게임" and menu[2][0].title == "운세"
     assert menu[3][0].title == "리듬게임" and [c.name for c in menu[3][1]] == ["maimai"]
     assert [c.name for c in menu[1][1]] == ["sudoku", "futoshiki", "nonogram", "minesweeper", "maze", "wordsearch",
                                              "spot", "oddchar", "omok", "dots", "tictactoe", "bingo", "ladder", "hangman"]
