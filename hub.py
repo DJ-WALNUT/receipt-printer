@@ -30,7 +30,7 @@ CONTROL = re.compile("[\x00-\x1f\x7f\x85  ]")   # 제어 문자와 줄 나�
 CONTENT_KEYS = {"title", "order", "kiosk", "wait_between", "script", "seed_prefix", "mode"}
 MODE_KEYS = {"id", "label", "audience", "sheets", "same_sheets", "args", "field"}
 FIELD_KEYS = {"id", "type", "label", "arg", "audience", "default", "choices", "min", "max",
-              "pattern", "max_length", "example", "required"}
+              "pattern", "max_length", "example", "required", "below"}
 GROUP_KEYS = {"title", "order"}
 
 
@@ -60,6 +60,7 @@ class Field:
     max_length: int
     example: str
     required: bool
+    below: str | None = None   # 숫자 항목: 다른 항목(이름 목록·숫자)의 개수보다 작아야 한다 (예: 당첨 < 참가자)
 
 
 @dataclass(frozen=True)
@@ -153,7 +154,7 @@ def _parse_field(table, where):
         raise HubError(f"{where}: 모르는 type '{ftype}' (가능: {', '.join(FIELD_TYPES)})")
     label = _need(table, "label", str, where)
     arg = _need(table, "arg", str, where)
-    default, choices, low, high, pattern = table.get("default"), (), None, None, None
+    default, choices, low, high, pattern, below = table.get("default"), (), None, None, None, None
     required = True
 
     if ftype == "choice":
@@ -169,6 +170,7 @@ def _parse_field(table, where):
             raise HubError(f"{where}: min이 max보다 큽니다")
         if ftype == "number":
             required = False
+            below = _typed(table, "below", str, where)
             if default is not None and not (isinstance(default, int) and not isinstance(default, bool)
                                             and low <= default <= high):
                 raise HubError(f"{where}: default가 min~max 범위의 정수가 아닙니다")
@@ -186,7 +188,7 @@ def _parse_field(table, where):
 
     max_length = _typed(table, "max_length", int, where, 8 if ftype == "names" else 40)
     return Field(fid, ftype, label, arg, _audience(table, where), default, choices, low, high, pattern,
-                 max_length, _typed(table, "example", str, where, ""), required)
+                 max_length, _typed(table, "example", str, where, ""), required, below)
 
 
 def _unique(items, what, where):
@@ -208,6 +210,15 @@ def _parse_mode(table, where):
     fields = tuple(_parse_field(f, where) for f in raw_fields)
     _unique(fields, "항목", where)
     audience = _audience(table, where)
+    known = {f.id: f for f in fields}
+    for field in fields:
+        if field.below is None:
+            continue
+        other = known.get(field.below)
+        if other is None or other is field or other.type not in ("names", "number"):
+            raise HubError(f"{where} 항목 '{field.id}': below는 같은 모드의 names 또는 number 항목 id여야 합니다")
+        if other.audience == "staff" and field.audience != "staff":
+            raise HubError(f"{where} 항목 '{field.id}': below가 운영자 전용 항목을 가리킵니다")
     for field in fields:
         # 방문자가 넣은 글자는 영수증에 그대로 찍힌다. 형식을 정하지 않은 칸을 방문자에게 열지 않는다.
         if field.type == "text" and field.pattern is None and "staff" not in (audience, field.audience):
@@ -385,16 +396,25 @@ def build_args(content: Content, mode_id: str, values: dict, role: str,
         if key not in known or not _visible(known[key], role):
             raise HubError("입력할 수 없는 항목이 들어 있어요.")
 
-    positional, options = [], []
+    positional, options, checked = [], [], {}
     for field in mode.fields:
         if not _visible(field, role):
             continue  # 방문자에게 운영자 전용 항목은 없는 것과 같다 (기본값도 붙이지 않는다)
         try:
-            value = _value(field, values.get(field.id), role, nicknames)
+            value = checked[field.id] = _value(field, values.get(field.id), role, nicknames)
         except HubError as e:
             raise HubError(str(e), field.id) from None
+    for field in mode.fields:
+        value = checked.get(field.id)
         if value is None:
             continue
+        if field.below is not None:
+            other, count = known[field.below], checked.get(field.below)
+            count = len(count.split(",")) if other.type == "names" and count else int(count or 0)
+            if count and int(value) >= count:
+                limit = max(field.min, count - 1)
+                raise HubError(f"{field.label}: {other.label} 수보다 적게, {field.min}~{limit} 사이로 정해 주세요.",
+                               field.id)
         if field.arg:
             options += [field.arg, value]
         else:
@@ -430,6 +450,8 @@ def _describe_field(field, role, nicknames):
     out = {"id": field.id, "type": field.type, "label": field.label, "default": field.default,
            "choices": [list(c) for c in field.choices], "min": field.min, "max": field.max,
            "max_length": field.max_length, "example": field.example, "required": field.required}
+    if field.below:
+        out["below"] = field.below
     if field.type == "names" and role != STAFF:
         out["type"], out["options"] = "pick", list(nicknames)
     return out

@@ -20,6 +20,7 @@ arg = "--wins"
 min = 1
 max = 7
 default = 1
+below = "names"
 
 [[mode]]
 id = "numbers"
@@ -41,6 +42,7 @@ arg = "--wins"
 min = 1
 max = 7
 default = 1
+below = "players"
 
 [[mode]]
 id = "results"

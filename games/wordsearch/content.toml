@@ -18,7 +18,9 @@ id = "theme"
 type = "choice"
 label = "주제"
 arg = "--theme"
-choices = [["무작위", ""], ["동물", "animal"], ["음식", "food"], ["과일", "fruit"], ["학교", "school"], ["우주", "space"]]
+choices = [["무작위", ""], ["동물", "animal"], ["음식", "food"], ["과일", "fruit"], ["학교", "school"], ["우주", "space"],
+           ["직업", "job"], ["운동", "sports"], ["날씨", "weather"], ["탈것", "ride"], ["악기", "music"], ["간식", "snack"],
+           ["나라", "country"], ["바다", "sea"]]
 default = ""
 
 [[mode]]
@@ -50,7 +52,7 @@ id = "number"
 type = "text"
 label = "시드번호"
 arg = "--answer"
-pattern = '[Ww][EMHemh][1-9]\d{6}'
+pattern = '[Ww][EMHemh][1-9A-Za-z]\d{6}'
 example = "WM3482913"
 
 [[mode]]

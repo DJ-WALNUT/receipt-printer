@@ -406,3 +406,38 @@ def test_check_same_refuses_modes_without_it(sudoku):
     assert hub.check_same(new, None) is False and hub.check_same(new, False) is False
     with pytest.raises(hub.HubError):
         hub.check_same(new, True)
+
+
+LADDER_WINS = LADDER + '''[[mode.field]]
+id = "wins"
+type = "number"
+label = "당첨 개수"
+arg = "--wins"
+min = 1
+max = 7
+default = 1
+below = "names"
+'''
+
+
+def test_below_limits_a_number_by_the_count_of_another_field(tmp_path):
+    c = one(tmp_path, LADDER_WINS)
+    nick = ["토끼", "여우", "수달", "고래"]
+    assert hub.build_args(c, "m", {"names": nick[:2]}, hub.VISITOR, nick) == ["--names", "토끼,여우", "--wins", "1"]
+    assert hub.build_args(c, "m", {"names": nick, "wins": 3}, hub.VISITOR, nick)[-1] == "3"
+    with pytest.raises(hub.HubError) as e:
+        hub.build_args(c, "m", {"names": nick[:2], "wins": 2}, hub.VISITOR, nick)
+    assert e.value.field == "wins" and "1~1" in str(e.value)
+    with pytest.raises(hub.HubError):
+        hub.build_args(c, "m", {"names": nick, "wins": 4}, hub.VISITOR, nick)
+
+
+def test_below_is_described_and_must_point_at_a_countable_field(tmp_path):
+    c = one(tmp_path, LADDER_WINS)
+    field = c.modes[0].fields[1]
+    assert field.below == "names"
+    out = hub._describe_field(field, hub.VISITOR, ())
+    assert out["below"] == "names"
+    for target in ["nope", "wins"]:
+        make(tmp_path, "bad", LADDER_WINS.replace('below = "names"', f'below = "{target}"'))
+        assert "below" in " ".join(str(e) for e in hub.load(tmp_path).errors)

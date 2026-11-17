@@ -51,7 +51,7 @@ def test_default_args(name, expected):
     ("loot", "new", {"level": 5}), ("lotto", "new", {"prize": "상품"}), ("lotto", "new", {"manual": "1 2 3 4 5 6"}),
     ("loot", "again", {"seed": "안녕"}), ("loot", "again", {"seed": "482913"}), ("tarot", "again", {"seed": "hello"}),
     ("sudoku", "answer", {"number": "ZM482913"}), ("wordsearch", "answer", {"number": "WM0482913"}),
-    ("ladder", "new", {"names": ["민수", "지아"]}), ("maimai", "new", {"handle": "a" * 41}),
+    ("ladder", "new", {"names": ["민수", "지아"]}), ("ladder", "new", {"names": ["토끼", "여우"], "wins": 2}), ("maimai", "new", {"handle": "a" * 41}),
     ("maimai", "new", {"handle": "https://maimai.shiftpsh.com/profile/x"}), ("lotto", "new", {"games": 6}),
 ])
 def test_visitor_is_refused(name, mode, values):

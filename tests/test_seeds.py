@@ -57,3 +57,15 @@ def test_sudoku_board_is_the_same_as_before_the_prefix():
     import sudoku
     digest = hashlib.sha256(repr(sudoku.generate("M", "482913")).encode()).hexdigest()
     assert digest == "f82c9c6b67bf98df31009ac2bc21d3a28023d6c600f9caa8b5a8ac4ac8ac5250"
+
+
+@pytest.mark.slow
+def test_wordsearch_themes_past_nine_use_letters():
+    code, out, err = run_script("games/wordsearch/wordsearch.py", "--theme", "sea")
+    assert code == 0, err
+    seed = seed_of(out)
+    assert seed[2] == "D"                      # 13번째 주제
+    code, out2, err = run_script("games/wordsearch/wordsearch.py", "--answer", seed.lower())
+    assert code == 0, err
+    assert seed_of(out2) == seed and "바다" in out2
+    assert run_script("games/wordsearch/wordsearch.py", "--answer", seed[:2] + "Z" + seed[3:])[0] != 0

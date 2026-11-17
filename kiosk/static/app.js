@@ -418,9 +418,15 @@
       });
       box.appendChild(row);
     } else if (field.type === 'number') {
-      box.appendChild(labelFor(field, field.min + '~' + field.max));
-      box.appendChild(renderStepper(field.min, field.max, state.values[field.id], field.default === null, field.label,
-        function (value) { state.values[field.id] = value; }));
+      var top = maxOf(field);
+      if (state.values[field.id] !== null && state.values[field.id] > top) { state.values[field.id] = top; }
+      box.appendChild(labelFor(field, field.min + '~' + top));
+      box.appendChild(renderStepper(field.min, top, state.values[field.id], field.default === null, field.label,
+        function (value) {
+          var changed = state.values[field.id] !== value;
+          state.values[field.id] = value;
+          if (changed && hasDependents(field)) { renderPanel(); }
+        }));
     } else if (field.type === 'pick') {
       var chosen = state.values[field.id];
       box.appendChild(labelFor(field, chosen.length + '명 고름 · ' + field.min + '~' + field.max + '명'));
@@ -453,6 +459,7 @@
       input.setAttribute('enterkeyhint', 'done');
       if (wrong) { input.className += ' textbox--wrong'; input.setAttribute('aria-invalid', 'true'); }
       input.addEventListener('input', function () { state.values[field.id] = input.value; refreshGo(); });
+      if (hasDependents(field)) { input.addEventListener('change', function () { renderPanel(); }); }
       input.addEventListener('keydown', function (event) { if (event.key === 'Enter') { input.blur(); } });
       box.appendChild(input);
     }
@@ -462,6 +469,24 @@
       box.appendChild(notice);
     }
     return box;
+  }
+
+  /* 숫자 항목의 실제 최댓값. below 가 있으면 그 항목(고른 이름 수·숫자)보다 작아야 한다 (당첨 < 참가자). */
+  function maxOf(field) {
+    if (!field.below) { return field.max; }
+    var count = 0;
+    state.mode.fields.forEach(function (other) {
+      if (other.id !== field.below) { return; }
+      var value = state.values[other.id];
+      if (other.type === 'pick') { count = value.length; }
+      else if (other.type === 'names') { count = splitNames(value).length; }
+      else { count = value || 0; }
+    });
+    return count ? Math.max(field.min, Math.min(field.max, count - 1)) : field.max;
+  }
+
+  function hasDependents(field) {
+    return state.mode.fields.some(function (other) { return other.below === field.id; });
   }
 
   /* 빼기 / 값 / 더하기. optional이면 비울 수 있고, 비우면 '자동'이다. onChange(값 또는 null) */
